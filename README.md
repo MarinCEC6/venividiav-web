@@ -1,4 +1,4 @@
-# VeniVidiAV Web Explorer — Ultra-fluid (PMTiles + MapLibre)
+# VeniVidiAV Web Explorer — (PMTiles + MapLibre)
 
 Cette version utilise des **tuiles vectorielles PMTiles** pour une navigation fluide à l'échelle communale.
 
@@ -15,7 +15,7 @@ Génère :
 - `data/communes_attrs.json` (table légère pour calcul des scénarios)
 - `data/departements_pillars.geojson`
 
-## 2) Génération PMTiles (ultra-fluide)
+## 2) Génération PMTiles
 
 ```bash
 python build_pmtiles.py
@@ -38,25 +38,8 @@ Ouvrir :
 
 \textbf{Important}: PMTiles a besoin des requêtes HTTP \texttt{Range}.  
 Le serveur standard `python -m http.server` peut ne pas les gérer selon l'environnement.  
-Utilise donc `serve_range.py` pour les tests locaux.
+ `serve_range.py` pour les tests locaux.
 
-## 4) Partager avec ton directeur (options)
-
-### Option A — Simple (zip)
-1. Zippe le dossier `webapp/` (avec `data/communes.pmtiles`).
-2. Ton directeur dézippe.
-3. Il lance `python -m http.server 8000` dans `webapp/`.
-4. Il ouvre `http://localhost:8000`.
-
-### Option B — GitHub Pages (recommandé)
-1. Crée un repo GitHub (ex: `venividiav-web`).
-2. Push le contenu de `webapp/` à la racine.
-3. Active GitHub Pages (`Settings > Pages`, source = `main` / root).
-4. Partage l’URL Pages.
-
-### Option C — Hébergement statique (Netlify / Vercel)
-1. Upload du dossier `webapp/` comme site statique.
-2. Partage l’URL publique.
 
 ## Outputs annuels calculés dans l’app
 
