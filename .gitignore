@@ -1,0 +1,12 @@
+# Python/cache
+__pycache__/
+*.pyc
+
+# Local build artifacts not needed on GitHub Pages
+data/communes.mbtiles
+data/communes_raw.geojson
+data/communes_pillars_simplified.geojson
+
+# Optional: keep only final web assets
+# (do NOT ignore communes.pmtiles / communes_attrs.json / communes_pillars.geojson
+#  because the app currently uses them at runtime)

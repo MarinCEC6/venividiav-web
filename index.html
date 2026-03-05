@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VeniVidiAV — Commune Explorer (PMTiles)</title>
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>VeniVidiAV — Explorateur communal (version PMTiles / MapLibre)</h1>
+      <p>Version optimisée pour fluidité: tuiles vectorielles PMTiles + calcul de scénarios côté navigateur.</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Pondération des piliers</h2>
+        <div class="preset-row">
+          <button data-preset="balanced">Balanced</button>
+          <button data-preset="energy">Energy-first</button>
+          <button data-preset="agronomy">Agronomy-first</button>
+          <button data-preset="climate">Climate-first</button>
+          <button data-preset="rural">Rural-first</button>
+          <button data-preset="nature">Nature-first</button>
+          <button data-preset="bau">BAU (E/A 50-50)</button>
+        </div>
+
+        <div class="control"><label for="wE">Énergie (<span id="wE_val">20</span>%)</label><input id="wE" type="range" min="0" max="100" step="1" value="20" /></div>
+        <div class="control"><label for="wA">Agronomie (<span id="wA_val">20</span>%)</label><input id="wA" type="range" min="0" max="100" step="1" value="20" /></div>
+        <div class="control"><label for="wC">Climat (<span id="wC_val">20</span>%)</label><input id="wC" type="range" min="0" max="100" step="1" value="20" /></div>
+        <div class="control"><label for="wR">Rural (<span id="wR_val">20</span>%)</label><input id="wR" type="range" min="0" max="100" step="1" value="20" /></div>
+        <div class="control"><label for="wN">Nature (<span id="wN_val">20</span>%)</label><input id="wN" type="range" min="0" max="100" step="1" value="20" /></div>
+        <div class="check-row"><label><input type="checkbox" id="applyPhi" checked /> Appliquer \(\phi\) au score</label></div>
+        <div class="meta-line"><strong>Poids normalisés :</strong> <span id="weightsNorm"></span></div>
+
+        <h2>Paramètres de scénario</h2>
+        <div class="control"><label for="targetHa">Cible de déploiement (ha): <span id="targetHa_val">50000</span></label><input id="targetHa" type="range" min="5000" max="150000" step="5000" value="50000" /></div>
+        <div class="control"><label for="mobilizationPct">Mobilisation \(m\) (% ELIG\_HA): <span id="mobilizationPct_val">0.5</span>%</label><input id="mobilizationPct" type="range" min="0.1" max="10" step="0.1" value="0.5" /></div>
+        <div class="control"><label for="density">Densité PV (MWp/ha): <span id="density_val">0.30</span></label><input id="density" type="range" min="0.1" max="1.0" step="0.01" value="0.30" /></div>
+        <div class="control"><label for="topPct">Seuil visuel Top <span id="topPct_val">10</span>%</label><input id="topPct" type="range" min="1" max="50" step="1" value="10" /></div>
+
+        <h2>Outputs annuels</h2>
+        <div class="kpi-grid">
+          <div class="kpi"><span>Communes sélectionnées</span><strong id="kpiCount">-</strong></div>
+          <div class="kpi"><span>Surface déployée (ha)</span><strong id="kpiArea">-</strong></div>
+          <div class="kpi"><span>Capacité installée (GWp)</span><strong id="kpiCap">-</strong></div>
+          <div class="kpi"><span>Production électrique (TWh/an)</span><strong id="kpiE">-</strong></div>
+        </div>
+
+        <h3>Top communes (score)</h3>
+        <table id="topTable">
+          <thead><tr><th>#</th><th>Commune</th><th>Score</th><th>ELIG\_HA</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="map-wrap">
+        <div id="loader" class="loader">Chargement des tuiles PMTiles...</div>
+        <div id="map"></div>
+        <div id="legend" class="legend"></div>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/pmtiles@3.0.7/dist/pmtiles.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
