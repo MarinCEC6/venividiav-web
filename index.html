@@ -1,69 +1,163 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VeniVidiAV — Commune Explorer (PMTiles)</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>VeniVidiAV — Explorer</title>
     <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./style.css?v=__APP_VERSION__" />
   </head>
   <body>
-    <header class="topbar">
-      <h1>VeniVidiAV — Explorateur communal (version PMTiles / MapLibre)</h1>
-      <p>Version optimisée pour fluidité: tuiles vectorielles PMTiles + calcul de scénarios côté navigateur.</p>
-    </header>
-
-    <main class="layout">
-      <section class="panel">
-        <h2>Pondération des piliers</h2>
-        <div class="preset-row">
-          <button data-preset="balanced">Balanced</button>
-          <button data-preset="energy">Energy-first</button>
-          <button data-preset="agronomy">Agronomy-first</button>
-          <button data-preset="climate">Climate-first</button>
-          <button data-preset="rural">Rural-first</button>
-          <button data-preset="nature">Nature-first</button>
-          <button data-preset="bau">BAU (E/A 50-50)</button>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero__copy">
+          <p class="eyebrow">VeniVidiAV</p>
+          <h1>Municipal agrivoltaics explorer</h1>
+          <p class="hero__lede">
+            Explore commune-level suitability, rebalance the five pillars in real time,
+            and see how deployment, electricity output, and top-ranked municipalities shift.
+          </p>
         </div>
-
-        <div class="control"><label for="wE">Énergie (<span id="wE_val">20</span>%)</label><input id="wE" type="range" min="0" max="100" step="1" value="20" /></div>
-        <div class="control"><label for="wA">Agronomie (<span id="wA_val">20</span>%)</label><input id="wA" type="range" min="0" max="100" step="1" value="20" /></div>
-        <div class="control"><label for="wC">Climat (<span id="wC_val">20</span>%)</label><input id="wC" type="range" min="0" max="100" step="1" value="20" /></div>
-        <div class="control"><label for="wR">Rural (<span id="wR_val">20</span>%)</label><input id="wR" type="range" min="0" max="100" step="1" value="20" /></div>
-        <div class="control"><label for="wN">Nature (<span id="wN_val">20</span>%)</label><input id="wN" type="range" min="0" max="100" step="1" value="20" /></div>
-        <div class="check-row"><label><input type="checkbox" id="applyPhi" checked /> Appliquer \(\phi\) au score</label></div>
-        <div class="meta-line"><strong>Poids normalisés :</strong> <span id="weightsNorm"></span></div>
-
-        <h2>Paramètres de scénario</h2>
-        <div class="control"><label for="targetHa">Cible de déploiement (ha): <span id="targetHa_val">50000</span></label><input id="targetHa" type="range" min="5000" max="150000" step="5000" value="50000" /></div>
-        <div class="control"><label for="mobilizationPct">Mobilisation \(m\) (% ELIG\_HA): <span id="mobilizationPct_val">0.5</span>%</label><input id="mobilizationPct" type="range" min="0.1" max="10" step="0.1" value="0.5" /></div>
-        <div class="control"><label for="density">Densité PV (MWp/ha): <span id="density_val">0.30</span></label><input id="density" type="range" min="0.1" max="1.0" step="0.01" value="0.30" /></div>
-        <div class="control"><label for="topPct">Seuil visuel Top <span id="topPct_val">10</span>%</label><input id="topPct" type="range" min="1" max="50" step="1" value="10" /></div>
-
-        <h2>Outputs annuels</h2>
-        <div class="kpi-grid">
-          <div class="kpi"><span>Communes sélectionnées</span><strong id="kpiCount">-</strong></div>
-          <div class="kpi"><span>Surface déployée (ha)</span><strong id="kpiArea">-</strong></div>
-          <div class="kpi"><span>Capacité installée (GWp)</span><strong id="kpiCap">-</strong></div>
-          <div class="kpi"><span>Production électrique (TWh/an)</span><strong id="kpiE">-</strong></div>
+        <div class="hero__meta">
+          <span class="meta-pill">Dark map interface</span>
+          <span class="meta-pill">Scenario computation in browser</span>
+          <span class="meta-pill" id="buildBadge">Build __APP_VERSION__</span>
         </div>
+      </header>
 
-        <h3>Top communes (score)</h3>
-        <table id="topTable">
-          <thead><tr><th>#</th><th>Commune</th><th>Score</th><th>ELIG\_HA</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </section>
+      <main class="layout">
+        <aside class="panel">
+          <section class="panel-section panel-section--intro">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Scenario design</p>
+                <h2>Pillar weights</h2>
+              </div>
+              <div class="weight-total">
+                <span>Total</span>
+                <strong id="weightTotal">100%</strong>
+              </div>
+            </div>
+            <p class="section-text">
+              Presets snap the weights to common narratives, while manual changes keep the total at 100%.
+            </p>
+            <div class="preset-row">
+              <button data-preset="balanced">Balanced</button>
+              <button data-preset="energy">Energy-first</button>
+              <button data-preset="agronomy">Agronomy-first</button>
+              <button data-preset="climate">Climate-first</button>
+              <button data-preset="rural">Rural-first</button>
+              <button data-preset="nature">Nature-first</button>
+              <button data-preset="bau">BAU (E/A 50–50)</button>
+            </div>
+            <div class="active-preset" id="activePreset">Active profile: Balanced</div>
+          </section>
 
-      <section class="map-wrap">
-        <div id="loader" class="loader">Chargement des tuiles PMTiles...</div>
-        <div id="map"></div>
-        <div id="legend" class="legend"></div>
-      </section>
-    </main>
+          <section class="panel-section">
+            <div class="control"><label for="wE">Energy <span id="wE_val">20</span>%</label><input id="wE" type="range" min="0" max="100" step="1" value="20" /></div>
+            <div class="control"><label for="wA">Agricultural intensity <span id="wA_val">20</span>%</label><input id="wA" type="range" min="0" max="100" step="1" value="20" /></div>
+            <div class="control"><label for="wC">Climate resilience <span id="wC_val">20</span>%</label><input id="wC" type="range" min="0" max="100" step="1" value="20" /></div>
+            <div class="control"><label for="wR">Rural resilience <span id="wR_val">20</span>%</label><input id="wR" type="range" min="0" max="100" step="1" value="20" /></div>
+            <div class="control"><label for="wN">Nature conservation <span id="wN_val">20</span>%</label><input id="wN" type="range" min="0" max="100" step="1" value="20" /></div>
+            <label class="toggle-row"><input type="checkbox" id="applyPhi" checked /> Apply <code>phi</code> feasibility multiplier</label>
+            <div class="meta-line"><strong>Normalized weights</strong><span id="weightsNorm"></span></div>
+          </section>
+
+          <section class="panel-section">
+            <p class="section-kicker">Deployment assumptions</p>
+            <h2>Scenario parameters</h2>
+            <div class="control"><label for="targetHa">Deployment target: <span id="targetHa_val">50000</span> ha</label><input id="targetHa" type="range" min="5000" max="150000" step="5000" value="50000" /></div>
+            <div class="control"><label for="mobilizationPct">Mobilization rate m: <span id="mobilizationPct_val">0.5</span>%</label><input id="mobilizationPct" type="range" min="0.1" max="10" step="0.1" value="0.5" /></div>
+            <div class="control"><label for="density">PV density: <span id="density_val">0.30</span> MWp/ha</label><input id="density" type="range" min="0.1" max="1.0" step="0.01" value="0.30" /></div>
+            <div class="control"><label for="topPct">Visual top threshold: <span id="topPct_val">10</span>%</label><input id="topPct" type="range" min="1" max="50" step="1" value="10" /></div>
+          </section>
+
+          <section class="panel-section">
+            <p class="section-kicker">Annual outputs</p>
+            <h2>Instant summary</h2>
+            <div class="kpi-grid">
+              <div class="kpi"><span>Selected communes</span><strong id="kpiCount">-</strong></div>
+              <div class="kpi"><span>Deployed area (ha)</span><strong id="kpiArea">-</strong></div>
+              <div class="kpi"><span>Installed capacity (GWp)</span><strong id="kpiCap">-</strong></div>
+              <div class="kpi"><span>Electricity output (TWh/y)</span><strong id="kpiE">-</strong></div>
+            </div>
+          </section>
+
+          <section class="panel-section panel-section--narrative">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Interpretation</p>
+                <h2>What this scenario means</h2>
+              </div>
+            </div>
+            <p class="section-text" id="scenarioNarrativeLead">
+              Balanced weights combine all five pillars and usually produce a broad, moderate portfolio.
+            </p>
+            <div class="narrative-tags" id="scenarioNarrativeTags"></div>
+            <p class="scenario-narrative-body" id="scenarioNarrativeBody"></p>
+          </section>
+
+          <section class="panel-section panel-section--table">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Leaderboard</p>
+                <h2>Top communes</h2>
+              </div>
+            </div>
+            <table id="topTable">
+              <thead><tr><th>#</th><th>Commune</th><th>Score</th><th>ELIG_HA</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+        </aside>
+
+        <section class="map-wrap">
+          <div id="loader" class="loader">Loading map assets…</div>
+          <div class="map-overlay map-overlay--title">
+            <div>
+              <p class="section-kicker">Live explorer</p>
+              <h2>Commune suitability map</h2>
+            </div>
+            <p id="mapStatus">PMTiles / MapLibre rendering</p>
+          </div>
+          <aside class="map-overlay map-overlay--context" id="contextPanel">
+            <div class="context-empty" id="contextEmpty">
+              <p class="section-kicker">Click a commune</p>
+              <h2>Context panel</h2>
+              <p>
+                Click any commune on the map to inspect its score, feasibility, deployment contribution,
+                and the pillar mix driving its ranking in the current scenario.
+              </p>
+            </div>
+            <div class="context-card hidden" id="contextCard">
+              <div class="context-head">
+                <div>
+                  <p class="section-kicker">Selected commune</p>
+                  <h2 id="contextTitle">-</h2>
+                </div>
+                <div class="context-rank" id="contextRank">Rank -</div>
+              </div>
+              <div class="context-summary">
+                <div class="context-metric"><span>Scenario score</span><strong id="contextScore">-</strong></div>
+                <div class="context-metric"><span>Feasibility (phi)</span><strong id="contextPhi">-</strong></div>
+                <div class="context-metric"><span>Eligible area</span><strong id="contextElig">-</strong></div>
+                <div class="context-metric"><span>Selected now?</span><strong id="contextSelected">-</strong></div>
+              </div>
+              <div class="context-narrative" id="contextNarrative"></div>
+              <div class="context-pillars" id="contextPillars"></div>
+            </div>
+          </aside>
+          <div id="map"></div>
+          <div id="legend" class="legend"></div>
+        </section>
+      </main>
+    </div>
 
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/pmtiles@3.0.7/dist/pmtiles.js"></script>
-    <script src="./app.js"></script>
+    <script src="./app.js?v=__APP_VERSION__"></script>
   </body>
 </html>

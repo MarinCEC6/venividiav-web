@@ -1,4 +1,4 @@
-name: Deploy static site to Pages
+﻿name: Deploy static site to Pages
 
 on:
   push:
@@ -22,6 +22,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Stamp build version for cache busting
+        shell: bash
+        run: |
+          APP_VERSION="$(date +%Y%m%d)-${GITHUB_SHA::7}"
+          sed -i "s/__APP_VERSION__/${APP_VERSION}/g" index.html app.js
+          echo "Stamped APP_VERSION=${APP_VERSION}"
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

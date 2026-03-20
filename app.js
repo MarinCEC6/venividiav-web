@@ -1,6 +1,27 @@
+﻿const APP_VERSION = "__APP_VERSION__" === "__APP_VERSION__" ? "dev-local" : "__APP_VERSION__";
+const DATA_VERSION = APP_VERSION;
+
 const loader = document.getElementById("loader");
 const legendEl = document.getElementById("legend");
 const topTableBody = document.querySelector("#topTable tbody");
+const weightsNormEl = document.getElementById("weightsNorm");
+const weightTotalEl = document.getElementById("weightTotal");
+const activePresetEl = document.getElementById("activePreset");
+const buildBadge = document.getElementById("buildBadge");
+const mapStatus = document.getElementById("mapStatus");
+const scenarioNarrativeLead = document.getElementById("scenarioNarrativeLead");
+const scenarioNarrativeTags = document.getElementById("scenarioNarrativeTags");
+const scenarioNarrativeBody = document.getElementById("scenarioNarrativeBody");
+const contextEmpty = document.getElementById("contextEmpty");
+const contextCard = document.getElementById("contextCard");
+const contextTitle = document.getElementById("contextTitle");
+const contextRank = document.getElementById("contextRank");
+const contextScore = document.getElementById("contextScore");
+const contextPhi = document.getElementById("contextPhi");
+const contextElig = document.getElementById("contextElig");
+const contextSelected = document.getElementById("contextSelected");
+const contextNarrative = document.getElementById("contextNarrative");
+const contextPillars = document.getElementById("contextPillars");
 
 const sliders = {
   E: document.getElementById("wE"),
@@ -17,7 +38,6 @@ const sliderVals = {
   N: document.getElementById("wN_val"),
 };
 const applyPhi = document.getElementById("applyPhi");
-const weightsNormEl = document.getElementById("weightsNorm");
 const targetHa = document.getElementById("targetHa");
 const targetHaVal = document.getElementById("targetHa_val");
 const mobilizationPct = document.getElementById("mobilizationPct");
@@ -31,19 +51,46 @@ const kpiCount = document.getElementById("kpiCount");
 const kpiArea = document.getElementById("kpiArea");
 const kpiCap = document.getElementById("kpiCap");
 const kpiE = document.getElementById("kpiE");
+const weightKeys = ["E", "A", "C", "R", "N"];
+const presetButtons = [...document.querySelectorAll("[data-preset]")];
+
+const PRESETS = {
+  balanced: { label: "Balanced", values: [20, 20, 20, 20, 20] },
+  energy: { label: "Energy-first", values: [100, 0, 0, 0, 0] },
+  agronomy: { label: "Agronomy-first", values: [0, 100, 0, 0, 0] },
+  climate: { label: "Climate-first", values: [0, 0, 100, 0, 0] },
+  rural: { label: "Rural-first", values: [0, 0, 0, 100, 0] },
+  nature: { label: "Nature-first", values: [0, 0, 0, 0, 100] },
+  bau: { label: "BAU (E/A 50–50)", values: [50, 50, 0, 0, 0] },
+};
 
 let map;
 let attrs = [];
 let globalPvoutMedian = 1250;
 let currentThreshold = 0.8;
 let usingPmtiles = true;
+let currentPreset = "balanced";
+let selectedCommuneInsee = null;
 const FR_BOUNDS = [
-  [-5.8, 41.0], // southwest [lon, lat]
-  [9.8, 51.6],  // northeast [lon, lat]
+  [-5.8, 41.0],
+  [9.8, 51.6],
 ];
 
+function withVersion(path) {
+  const url = new URL(path, window.location.href);
+  url.searchParams.set("v", DATA_VERSION);
+  return url.href;
+}
+
 function fmtNum(x, d = 2) {
-  return Number(x).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+  return Number(x).toLocaleString("fr-FR", {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  });
+}
+
+function fmtPct(x, d = 0) {
+  return `${fmtNum(x, d)}%`;
 }
 
 function quantile(arr, q) {
@@ -55,33 +102,186 @@ function quantile(arr, q) {
   return s[base + 1] !== undefined ? s[base] + rest * (s[base + 1] - s[base]) : s[base];
 }
 
+function getRawWeights() {
+  return Object.fromEntries(weightKeys.map((k) => [k, Number(sliders[k].value)]));
+}
+
 function getWeights() {
-  const raw = {
-    E: Number(sliders.E.value),
-    A: Number(sliders.A.value),
-    C: Number(sliders.C.value),
-    R: Number(sliders.R.value),
-    N: Number(sliders.N.value),
-  };
+  const raw = getRawWeights();
   const sum = Object.values(raw).reduce((a, b) => a + b, 0);
   if (sum <= 0) return { E: 0.2, A: 0.2, C: 0.2, R: 0.2, N: 0.2 };
-  return {
-    E: raw.E / sum,
-    A: raw.A / sum,
-    C: raw.C / sum,
-    R: raw.R / sum,
-    N: raw.N / sum,
-  };
+  return Object.fromEntries(weightKeys.map((k) => [k, raw[k] / sum]));
+}
+
+function setPresetState(name) {
+  currentPreset = name;
+  const label = PRESETS[name]?.label || "Custom";
+  activePresetEl.textContent = `Active profile: ${label}`;
+  presetButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.preset === name);
+  });
+}
+
+function detectPresetName() {
+  const current = weightKeys.map((k) => Number(sliders[k].value));
+  for (const [name, preset] of Object.entries(PRESETS)) {
+    if (preset.values.every((value, idx) => value === current[idx])) {
+      return name;
+    }
+  }
+  return "custom";
+}
+
+function rebalanceWeights(changedKey, changedValue) {
+  const raw = getRawWeights();
+  const v = Math.max(0, Math.min(100, Number(changedValue)));
+  raw[changedKey] = v;
+
+  const others = weightKeys.filter((k) => k !== changedKey);
+  const targetOthers = 100 - v;
+  const currentOthers = others.map((k) => raw[k]);
+  const sumOthers = currentOthers.reduce((a, b) => a + b, 0);
+
+  let newOthers;
+  if (sumOthers <= 0) {
+    const base = Math.floor(targetOthers / others.length);
+    let rem = targetOthers - base * others.length;
+    newOthers = others.map(() => {
+      const add = rem > 0 ? 1 : 0;
+      rem -= add;
+      return base + add;
+    });
+  } else {
+    const scaled = currentOthers.map((x) => (x * targetOthers) / sumOthers);
+    const floored = scaled.map((x) => Math.floor(x));
+    let rem = targetOthers - floored.reduce((a, b) => a + b, 0);
+    const fracOrder = scaled
+      .map((x, i) => ({ i, frac: x - floored[i] }))
+      .sort((a, b) => b.frac - a.frac);
+    for (let t = 0; t < fracOrder.length && rem > 0; t += 1) {
+      floored[fracOrder[t].i] += 1;
+      rem -= 1;
+    }
+    newOthers = floored;
+  }
+
+  sliders[changedKey].value = String(v);
+  others.forEach((k, i) => {
+    sliders[k].value = String(newOthers[i]);
+  });
 }
 
 function updateLabels() {
-  for (const k of Object.keys(sliders)) sliderVals[k].textContent = sliders[k].value;
+  for (const k of weightKeys) sliderVals[k].textContent = sliders[k].value;
   targetHaVal.textContent = targetHa.value;
   mobilizationPctVal.textContent = Number(mobilizationPct.value).toFixed(1);
   densityVal.textContent = Number(density.value).toFixed(2);
   topPctVal.textContent = topPct.value;
+  const total = Object.values(getRawWeights()).reduce((a, b) => a + b, 0);
+  weightTotalEl.textContent = `${total}%`;
   const w = getWeights();
-  weightsNormEl.textContent = `E=${w.E.toFixed(2)}, A=${w.A.toFixed(2)}, C=${w.C.toFixed(2)}, R=${w.R.toFixed(2)}, N=${w.N.toFixed(2)}`;
+  weightsNormEl.textContent = `E ${w.E.toFixed(2)} · A ${w.A.toFixed(2)} · C ${w.C.toFixed(2)} · R ${w.R.toFixed(2)} · N ${w.N.toFixed(2)}`;
+  setPresetState(detectPresetName());
+}
+
+function pillarDefinitions() {
+  return [
+    { key: "E", field: "P_E", label: "Energy" },
+    { key: "A", field: "P_A", label: "Agriculture" },
+    { key: "C", field: "P_C", label: "Climate" },
+    { key: "R", field: "P_R", label: "Rural" },
+    { key: "N", field: "P_N", label: "Nature" },
+  ];
+}
+
+function scenarioMeaning(w, target, area, outputTWh) {
+  const dominant = pillarDefinitions()
+    .map((p) => ({ ...p, weight: w[p.key] }))
+    .sort((a, b) => b.weight - a.weight);
+  const lead = dominant[0];
+  const second = dominant[1];
+  const topShare = Math.round(lead.weight * 100);
+  const secondShare = Math.round(second.weight * 100);
+  const targetShort = target >= 100000 ? `${Math.round(target / 1000)}k ha` : `${target.toLocaleString("fr-FR")} ha`;
+
+  let leadText = `This configuration primarily prioritizes ${lead.label.toLowerCase()}, with ${topShare}% of the utility weight attached to that pillar.`;
+  if (lead.weight < 0.35) {
+    leadText = "This configuration stays relatively balanced across the five pillars, without a single overwhelming objective.";
+  } else if (second.weight > 0.15) {
+    leadText += ` A secondary emphasis remains on ${second.label.toLowerCase()} (${secondShare}%).`;
+  }
+
+  const tags = [];
+  if (lead.weight >= 0.5) tags.push(`${lead.label}-led`);
+  else tags.push("Multi-objective");
+  if (applyPhi.checked) tags.push("Feasibility-aware");
+  if (target >= 100000) tags.push("Large deployment target");
+  else tags.push("Early deployment tranche");
+
+  const body = `${leadText} At the current settings, the app fills a ${targetShort} deployment portfolio, selecting ${fmtNum(
+    attrs.filter((r) => r._selected).length,
+    0,
+  )} communes for ${fmtNum(area, 0)} ha and about ${fmtNum(outputTWh, 3)} TWh/year. Use the map clicks to see which local pillar mix explains a commune's position in that portfolio.`;
+
+  return { lead: leadText, tags, body };
+}
+
+function contributionBreakdown(row, w) {
+  return pillarDefinitions().map((p) => {
+    const weighted = row[p.field] * w[p.key];
+    return {
+      ...p,
+      raw: row[p.field],
+      weighted,
+    };
+  });
+}
+
+function updateScenarioNarrative(area, outputTWh) {
+  const w = getWeights();
+  const target = Number(targetHa.value);
+  const meaning = scenarioMeaning(w, target, area, outputTWh);
+  scenarioNarrativeLead.textContent = meaning.lead;
+  scenarioNarrativeBody.textContent = meaning.body;
+  scenarioNarrativeTags.innerHTML = meaning.tags.map((tag) => `<span class="narrative-tag">${tag}</span>`).join("");
+}
+
+function setContextPanel(row) {
+  if (!row) {
+    contextEmpty.classList.remove("hidden");
+    contextCard.classList.add("hidden");
+    return;
+  }
+
+  const w = getWeights();
+  const breakdown = contributionBreakdown(row, w).sort((a, b) => b.weighted - a.weighted);
+  const best = breakdown[0];
+  const selectedText = row._selected
+    ? `Yes — ${fmtNum(row._take_ha || 0, 0)} ha allocated`
+    : "No — below current cut-off";
+
+  contextEmpty.classList.add("hidden");
+  contextCard.classList.remove("hidden");
+  contextTitle.textContent = `${row.name} (${row.insee})`;
+  contextRank.textContent = `Rank ${fmtNum((row._rank || 0), 0)}`;
+  contextScore.textContent = row._score?.toFixed(3) ?? "-";
+  contextPhi.textContent = fmtNum(row.phi ?? 0, 3);
+  contextElig.textContent = `${fmtNum(row.ELIG_HA || 0, 0)} ha`;
+  contextSelected.textContent = selectedText;
+  contextNarrative.textContent = `${best.label} contributes the most to this commune's current utility score. ${
+    row._selected
+      ? "It is currently inside the selected deployment portfolio."
+      : "It remains visible on the map, but it is not captured by the current deployment tranche."
+  }`;
+  contextPillars.innerHTML = breakdown
+    .map(
+      (part) => `<div class="pillar-bar">
+        <span class="pillar-bar__label">${part.label}</span>
+        <div class="pillar-bar__track"><div class="pillar-bar__fill" style="width:${Math.max(4, part.raw * 100)}%"></div></div>
+        <span class="pillar-bar__value">${fmtPct(part.raw * 100, 0)}</span>
+      </div>`,
+    )
+    .join("");
 }
 
 function computeScore(row, w, withPhi) {
@@ -102,7 +302,46 @@ function scoreExpr(w, withPhi) {
   return withPhi ? ["*", linear, ["coalesce", ["get", "phi"], 0]] : linear;
 }
 
+function renderLegend(min, max, threshold) {
+  legendEl.innerHTML = `
+    <strong>Commune utility score</strong><br/>
+    <small>Bright outlines mark communes above the visual top threshold.</small>
+    <div class="legend-scale"></div>
+    Min: ${min.toFixed(3)}<br/>
+    Max: ${max.toFixed(3)}<br/>
+    Top ${topPct.value}% threshold: ${threshold.toFixed(3)}
+  `;
+}
+
+function refreshMapStyling() {
+  if (!map || !map.getLayer("communes-fill")) return;
+  const w = getWeights();
+  const expr = scoreExpr(w, applyPhi.checked);
+  map.setPaintProperty("communes-fill", "fill-color", [
+    "interpolate",
+    ["linear"],
+    expr,
+    0.0, "#09101b",
+    0.2, "#17345f",
+    0.4, "#146b8f",
+    0.6, "#10b8b7",
+    0.8, "#a5f04b",
+    1.0, "#fff27a",
+  ]);
+  map.setPaintProperty("communes-fill", "fill-opacity", [
+    "interpolate",
+    ["linear"],
+    expr,
+    0.0, 0.22,
+    1.0, 0.88,
+  ]);
+  map.setPaintProperty("communes-line", "line-width", ["case", [">=", expr, currentThreshold], 1.25, 0.0]);
+  map.setPaintProperty("communes-line", "line-color", ["case", [">=", expr, currentThreshold], "#ff7a59", "#000000"]);
+}
+
 function refreshScenarioAndKPIs() {
+  if (!attrs.length) return;
+
   const w = getWeights();
   const withPhi = applyPhi.checked;
   const target = Number(targetHa.value);
@@ -115,11 +354,14 @@ function refreshScenarioAndKPIs() {
     r._take_ha = 0;
   }
   attrs.sort((a, b) => b._score - a._score);
+  attrs.forEach((r, idx) => {
+    r._rank = idx + 1;
+  });
 
   const scores = attrs.map((r) => r._score).filter((v) => Number.isFinite(v));
   const min = Math.min(...scores);
   const max = Math.max(...scores);
-  currentThreshold = quantile(scores, 1 - Number(topPct.value) / 100);
+  currentThreshold = quantile(scores, 1 - Number(topPct.value) / 100) ?? 0;
 
   let remain = target;
   let area = 0;
@@ -150,81 +392,101 @@ function refreshScenarioAndKPIs() {
   kpiArea.textContent = fmtNum(area, 0);
   kpiCap.textContent = fmtNum(capMWp / 1000, 2);
   kpiE.textContent = fmtNum(eKWh / 1e9, 3);
+  updateScenarioNarrative(area, eKWh / 1e9);
 
   topTableBody.innerHTML = attrs
     .slice(0, 15)
     .map(
       (r, i) => `<tr>
-      <td>${i + 1}</td>
-      <td>${r.name}</td>
-      <td>${r._score.toFixed(3)}</td>
-      <td>${fmtNum(r.ELIG_HA || 0, 0)}</td>
-    </tr>`
+        <td>${i + 1}</td>
+        <td>${r.name}${r._selected ? " <span style='color:#a5f04b'>●</span>" : ""}</td>
+        <td>${r._score.toFixed(3)}</td>
+        <td>${fmtNum(r.ELIG_HA || 0, 0)}</td>
+      </tr>`
     )
     .join("");
 
-  legendEl.innerHTML = `
-    <strong>Score utilité communal</strong><br/>
-    <div class="legend-scale"></div>
-    Min: ${min.toFixed(3)}<br/>
-    Max: ${max.toFixed(3)}<br/>
-    Seuil Top ${topPct.value}%: ${currentThreshold.toFixed(3)}<br/>
-    Bordure rouge: communes au-dessus du seuil visuel.
-  `;
-
-  if (map && map.getLayer("communes-fill")) {
-    const expr = scoreExpr(w, withPhi);
-    map.setPaintProperty("communes-fill", "fill-color", [
-      "interpolate",
-      ["linear"],
-      expr,
-      0,
-      "#e8f6f3",
-      0.5,
-      "#2a9d8f",
-      1,
-      "#1d3557",
-    ]);
-    map.setPaintProperty("communes-line", "line-width", [
-      "case",
-      [">=", expr, currentThreshold],
-      0.6,
-      0.0,
-    ]);
-  }
+  const selectedRow = selectedCommuneInsee ? attrs.find((r) => r.insee === selectedCommuneInsee) : null;
+  setContextPanel(selectedRow || null);
+  renderLegend(min, max, currentThreshold);
+  refreshMapStyling();
 }
 
 function applyPreset(name) {
-  const presets = {
-    balanced: [20, 20, 20, 20, 20],
-    energy: [100, 0, 0, 0, 0],
-    agronomy: [0, 100, 0, 0, 0],
-    climate: [0, 0, 100, 0, 0],
-    rural: [0, 0, 0, 100, 0],
-    nature: [0, 0, 0, 0, 100],
-    bau: [50, 50, 0, 0, 0],
-  };
-  const p = presets[name];
-  if (!p) return;
-  sliders.E.value = p[0];
-  sliders.A.value = p[1];
-  sliders.C.value = p[2];
-  sliders.R.value = p[3];
-  sliders.N.value = p[4];
+  const preset = PRESETS[name];
+  if (!preset) return;
+  [sliders.E.value, sliders.A.value, sliders.C.value, sliders.R.value, sliders.N.value] = preset.values.map(String);
+  setPresetState(name);
   updateLabels();
   refreshScenarioAndKPIs();
+}
+
+function findRowFromFeatureProperties(properties) {
+  const insee = String(properties?.insee || properties?.INSEE_COM || properties?.code_insee || "");
+  if (!insee) return null;
+  return attrs.find((row) => row.insee === insee) || null;
 }
 
 let refreshTimer = null;
 function refreshDebounced() {
   clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(refreshScenarioAndKPIs, 120);
+  refreshTimer = setTimeout(refreshScenarioAndKPIs, 80);
+}
+
+async function fetchJson(path) {
+  const response = await fetch(withVersion(path), { cache: "no-store" });
+  if (!response.ok) throw new Error(`Failed to load ${path}: ${response.status}`);
+  return response.json();
+}
+
+function buildMapStyle(pmtilesUrl) {
+  return {
+    version: 8,
+    sources: {
+      dark: {
+        type: "raster",
+        tiles: ["https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        attribution: "© OpenStreetMap contributors © CARTO",
+      },
+      communes: {
+        type: "vector",
+        url: `pmtiles://${pmtilesUrl}`,
+      },
+    },
+    layers: [
+      { id: "dark", type: "raster", source: "dark" },
+      {
+        id: "communes-fill",
+        type: "fill",
+        source: "communes",
+        "source-layer": "communes",
+        paint: {
+          "fill-color": "#146b8f",
+          "fill-opacity": 0.72,
+        },
+      },
+      {
+        id: "communes-line",
+        type: "line",
+        source: "communes",
+        "source-layer": "communes",
+        paint: {
+          "line-color": "#ff7a59",
+          "line-width": 0.0,
+          "line-opacity": 0.98,
+        },
+      },
+    ],
+  };
 }
 
 async function init() {
-  // Load lightweight attributes table for scenario computation
-  const attrsResp = await fetch("./data/communes_attrs.json");
-  attrs = await attrsResp.json();
+  buildBadge.textContent = `Build ${APP_VERSION}`;
+  loader.textContent = "Loading scenario attributes…";
+  mapStatus.textContent = "Fetching latest assets";
+
+  attrs = await fetchJson("./data/communes_attrs.json");
   attrs = attrs.map((r) => ({
     insee: String(r.insee),
     name: r.name || r.commune_name || r.insee,
@@ -238,63 +500,27 @@ async function init() {
     ELIG_HA: Number(r.ELIG_HA || 0),
     pvout: Number(r.pvout),
   }));
+
   const pv = attrs.map((r) => r.pvout).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
   if (pv.length) globalPvoutMedian = pv[Math.floor(pv.length / 2)];
 
   const protocol = new pmtiles.Protocol();
   maplibregl.addProtocol("pmtiles", protocol.tile);
-  const pmtilesUrl = new URL("./data/communes.pmtiles", window.location.href).href;
-  const p = new pmtiles.PMTiles(pmtilesUrl);
-  protocol.add(p);
+  const pmtilesUrl = withVersion("./data/communes.pmtiles");
+  const pmtilesSource = new pmtiles.PMTiles(pmtilesUrl);
+  protocol.add(pmtilesSource);
 
   map = new maplibregl.Map({
     container: "map",
-    style: {
-      version: 8,
-      sources: {
-        osm: {
-          type: "raster",
-          tiles: ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"],
-          tileSize: 256,
-          attribution: "© OpenStreetMap contributors",
-        },
-        communes: {
-          type: "vector",
-          url: `pmtiles://${pmtilesUrl}`,
-        },
-      },
-      layers: [
-        { id: "osm", type: "raster", source: "osm" },
-        {
-          id: "communes-fill",
-          type: "fill",
-          source: "communes",
-          "source-layer": "communes",
-          paint: {
-            "fill-color": "#8ab6c9",
-            "fill-opacity": 0.72,
-          },
-        },
-        {
-          id: "communes-line",
-          type: "line",
-          source: "communes",
-          "source-layer": "communes",
-          paint: {
-            "line-color": "#e63946",
-            "line-width": 0.0,
-            "line-opacity": 0.95,
-          },
-        },
-      ],
-    },
+    style: buildMapStyle(pmtilesUrl),
     center: [2.2, 46.7],
     zoom: 5.4,
     minZoom: 4,
     maxZoom: 12,
+    attributionControl: true,
   });
 
-  map.addControl(new maplibregl.NavigationControl(), "top-right");
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
   let fallbackTriggered = false;
   async function fallbackToGeoJSON(reason) {
@@ -303,13 +529,14 @@ async function init() {
     usingPmtiles = false;
     console.warn("PMTiles fallback -> GeoJSON:", reason);
     loader.classList.remove("hidden");
-    loader.textContent = "PMTiles indisponible, chargement GeoJSON de secours...";
+    loader.textContent = "PMTiles unavailable, loading GeoJSON fallback…";
+    mapStatus.textContent = "GeoJSON fallback mode";
+
     try {
-      const resp = await fetch("./data/communes_pillars.geojson");
-      const gj = await resp.json();
+      const gj = await fetchJson("./data/communes_pillars.geojson");
       if (map.getSource("communes")) {
-        map.removeLayer("communes-line");
-        map.removeLayer("communes-fill");
+        if (map.getLayer("communes-line")) map.removeLayer("communes-line");
+        if (map.getLayer("communes-fill")) map.removeLayer("communes-fill");
         map.removeSource("communes");
       }
       map.addSource("communes", { type: "geojson", data: gj });
@@ -317,19 +544,20 @@ async function init() {
         id: "communes-fill",
         type: "fill",
         source: "communes",
-        paint: { "fill-color": "#8ab6c9", "fill-opacity": 0.72 },
+        paint: { "fill-color": "#146b8f", "fill-opacity": 0.72 },
       });
       map.addLayer({
         id: "communes-line",
         type: "line",
         source: "communes",
-        paint: { "line-color": "#e63946", "line-width": 0.0, "line-opacity": 0.95 },
+        paint: { "line-color": "#ff7a59", "line-width": 0.0, "line-opacity": 0.98 },
       });
       refreshScenarioAndKPIs();
       loader.classList.add("hidden");
     } catch (err) {
       console.error("Fallback GeoJSON failed:", err);
-      loader.textContent = "Erreur de chargement des couches cartographiques.";
+      loader.textContent = "Map layers could not be loaded.";
+      mapStatus.textContent = "Load error";
     }
   }
 
@@ -343,16 +571,16 @@ async function init() {
   map.on("load", () => {
     updateLabels();
     refreshScenarioAndKPIs();
-    // Force an initial viewport centered on metropolitan France
     map.fitBounds(FR_BOUNDS, {
-      padding: { top: 20, right: 20, bottom: 20, left: 420 }, // left padding for control panel
+      padding: { top: 24, right: 24, bottom: 24, left: window.innerWidth > 1160 ? 430 : 24 },
       maxZoom: 7.2,
       duration: 0,
     });
     map.resize();
     loader.classList.add("hidden");
+    mapStatus.textContent = usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode";
+
     if (usingPmtiles) {
-      // If source is still not readable shortly after load, trigger fallback.
       setTimeout(() => {
         try {
           const hasSource = !!map.getSource("communes");
@@ -360,54 +588,66 @@ async function init() {
         } catch (e) {
           fallbackToGeoJSON(e);
         }
-      }, 3000);
+      }, 2500);
     }
-  });
-
-  window.addEventListener("resize", () => {
-    if (!map) return;
-    map.resize();
   });
 
   map.on("click", "communes-fill", (e) => {
     const f = e.features?.[0];
     if (!f) return;
     const p = f.properties;
-    const w = getWeights();
-    const score = computeScore(
-      {
-        P_E: Number(p.P_E),
-        P_A: Number(p.P_A),
-        P_C: Number(p.P_C),
-        P_R: Number(p.P_R),
-        P_N: Number(p.P_N),
-        phi: Number(p.phi),
-      },
-      w,
-      applyPhi.checked
-    );
-    new maplibregl.Popup()
+    const row = findRowFromFeatureProperties(p) || {
+      insee: String(p.insee || p.INSEE_COM || ""),
+      name: p.name || p.nom || p.insee,
+      P_E: Number(p.P_E),
+      P_A: Number(p.P_A),
+      P_C: Number(p.P_C),
+      P_R: Number(p.P_R),
+      P_N: Number(p.P_N),
+      phi: Number(p.phi),
+      ELIG_HA: Number(p.ELIG_HA || 0),
+      pvout: Number(p.pvout || globalPvoutMedian),
+    };
+    selectedCommuneInsee = row.insee || null;
+    setContextPanel(row);
+
+    new maplibregl.Popup({ closeButton: true, maxWidth: "320px" })
       .setLngLat(e.lngLat)
       .setHTML(
-        `<strong>${p.name || p.insee}</strong> (${p.insee})<br/>
-         Score: <strong>${score.toFixed(3)}</strong><br/>
-         ELIG_HA: ${fmtNum(Number(p.ELIG_HA || 0), 1)} ha<br/>
-         PVOUT: ${fmtNum(Number(p.pvout || globalPvoutMedian), 0)} kWh/kWp/an`
+        `<strong>${row.name || row.insee}</strong> (${row.insee})<br/>
+         Score: <strong>${(row._score ?? computeScore(row, getWeights(), applyPhi.checked)).toFixed(3)}</strong><br/>
+         ELIG_HA: ${fmtNum(Number(row.ELIG_HA || 0), 1)} ha<br/>
+         PVOUT: ${fmtNum(Number(row.pvout || globalPvoutMedian), 0)} kWh/kWp/year`,
       )
       .addTo(map);
   });
+
+  window.addEventListener("resize", () => {
+    if (!map) return;
+    map.resize();
+  });
 }
 
-for (const el of Object.values(sliders)) {
-  el.addEventListener("input", updateLabels);
-  el.addEventListener("change", refreshDebounced);
-}
+weightKeys.forEach((k) => {
+  sliders[k].addEventListener("input", (ev) => {
+    rebalanceWeights(k, ev.target.value);
+    setPresetState("custom");
+    updateLabels();
+    refreshDebounced();
+  });
+});
 for (const el of [applyPhi, targetHa, mobilizationPct, density, topPct]) {
-  el.addEventListener("input", updateLabels);
-  el.addEventListener("change", refreshDebounced);
+  el.addEventListener("input", () => {
+    updateLabels();
+    refreshDebounced();
+  });
 }
-document.querySelectorAll("[data-preset]").forEach((b) => {
-  b.addEventListener("click", () => applyPreset(b.dataset.preset));
+presetButtons.forEach((button) => {
+  button.addEventListener("click", () => applyPreset(button.dataset.preset));
 });
 
-init();
+init().catch((error) => {
+  console.error(error);
+  loader.textContent = "The application failed to initialize.";
+  mapStatus.textContent = "Initialization error";
+});
