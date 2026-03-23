@@ -43,7 +43,7 @@ code { color: var(--accent-3); }
 
 .hero {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 18px;
   align-items: flex-end;
   padding: 18px 22px 20px;
@@ -81,23 +81,6 @@ code { color: var(--accent-3); }
   color: var(--muted);
   line-height: 1.55;
 }
-.hero__meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px;
-}
-.meta-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(79, 209, 255, 0.06);
-  color: var(--ink);
-  white-space: nowrap;
-}
-
 .layout {
   display: grid;
   grid-template-columns: 420px minmax(0, 1fr);
@@ -337,6 +320,29 @@ code { color: var(--accent-3); }
   color: var(--muted);
   font-size: 0.88rem;
 }
+.map-mode-switch {
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.map-mode-switch button {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.map-mode-switch button:hover,
+.map-mode-switch button.active {
+  transform: translateY(-1px);
+  border-color: rgba(79, 209, 255, 0.75);
+  background: linear-gradient(135deg, rgba(79, 209, 255, 0.18), rgba(255, 122, 89, 0.12));
+  box-shadow: 0 0 0 1px rgba(79, 209, 255, 0.18) inset;
+}
 .context-empty p:last-child {
   margin-bottom: 0;
   color: var(--muted);
@@ -461,6 +467,29 @@ code { color: var(--accent-3); }
   border-radius: 999px;
   background: linear-gradient(90deg, var(--good-0), var(--good-1), var(--good-2), var(--good-3), var(--good-4), var(--good-5));
 }
+.legend-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 8px;
+}
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.legend-chip__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.legend-chip__swatch--selected {
+  background: #7af0a4;
+}
+.legend-chip__swatch--unselected {
+  background: #182233;
+}
 .legend small { color: var(--muted); }
 
 .maplibregl-popup-content {
@@ -502,10 +531,8 @@ code { color: var(--accent-3); }
   .app-shell { padding: 12px; }
   .hero {
     padding: 16px;
-    flex-direction: column;
     align-items: flex-start;
   }
-  .hero__meta { justify-content: flex-start; }
   .preset-row,
   .kpi-grid {
     grid-template-columns: 1fr;

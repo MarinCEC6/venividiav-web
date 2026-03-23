@@ -7,8 +7,8 @@ const topTableBody = document.querySelector("#topTable tbody");
 const weightsNormEl = document.getElementById("weightsNorm");
 const weightTotalEl = document.getElementById("weightTotal");
 const activePresetEl = document.getElementById("activePreset");
-const buildBadge = document.getElementById("buildBadge");
 const mapStatus = document.getElementById("mapStatus");
+const mapModeButtons = [...document.querySelectorAll("[data-map-mode]")];
 const scenarioNarrativeLead = document.getElementById("scenarioNarrativeLead");
 const scenarioNarrativeTags = document.getElementById("scenarioNarrativeTags");
 const scenarioNarrativeBody = document.getElementById("scenarioNarrativeBody");
@@ -68,8 +68,10 @@ let map;
 let attrs = [];
 let globalPvoutMedian = 1250;
 let currentThreshold = 0.8;
+let currentSelectionThreshold = 0.8;
 let usingPmtiles = true;
 let currentPreset = "balanced";
+let currentMapMode = "merit";
 let selectedCommuneInsee = null;
 const FR_BOUNDS = [
   [-5.8, 41.0],
@@ -200,13 +202,24 @@ function updateLabels() {
   setPresetState(detectPresetName());
 }
 
+function setMapMode(mode) {
+  currentMapMode = mode === "selection" ? "selection" : "merit";
+  mapModeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.mapMode === currentMapMode);
+  });
+  if (attrs.length) {
+    renderLegendFromState();
+    refreshMapStyling();
+  }
+}
+
 function pillarDefinitions() {
   return [
     { key: "E", field: "P_E", label: "Energy" },
-    { key: "A", field: "P_A", label: "Agriculture" },
-    { key: "C", field: "P_C", label: "Climate" },
-    { key: "R", field: "P_R", label: "Rural" },
-    { key: "N", field: "P_N", label: "Nature" },
+    { key: "A", field: "P_A", label: "Agricultural intensity" },
+    { key: "C", field: "P_C", label: "Climate resilience" },
+    { key: "R", field: "P_R", label: "Rural resilience" },
+    { key: "N", field: "P_N", label: "Nature conservation" },
   ];
 }
 
@@ -318,14 +331,32 @@ function scoreExpr(w, withPhi) {
   return withPhi ? ["*", linear, ["coalesce", ["get", "phi"], 0]] : linear;
 }
 
-function renderLegend(min, max, threshold) {
+function renderLegendFromState() {
+  const scores = attrs.map((r) => r._score).filter((v) => Number.isFinite(v));
+  const min = scores.length ? Math.min(...scores) : 0;
+  const max = scores.length ? Math.max(...scores) : 1;
+
+  if (currentMapMode === "selection") {
+    legendEl.innerHTML = `
+      <strong>Selection outcome</strong><br/>
+      <small>Bright fills mark municipalities selected under the current deployment settings.</small>
+      <div class="legend-chip-row">
+        <span class="legend-chip"><span class="legend-chip__swatch legend-chip__swatch--selected"></span>Selected</span>
+        <span class="legend-chip"><span class="legend-chip__swatch legend-chip__swatch--unselected"></span>Not selected</span>
+      </div>
+      Selection cut-off score: ${currentSelectionThreshold.toFixed(3)}<br/>
+      Selected municipalities: ${fmtNum(attrs.filter((r) => r._selected).length, 0)}
+    `;
+    return;
+  }
+
   legendEl.innerHTML = `
-    <strong>Municipality utility score</strong><br/>
+    <strong>Merit-order score</strong><br/>
     <small>Bright outlines mark municipalities above the visual top threshold.</small>
     <div class="legend-scale"></div>
     Min: ${min.toFixed(3)}<br/>
     Max: ${max.toFixed(3)}<br/>
-    Top ${topPct.value}% threshold: ${threshold.toFixed(3)}
+    Top ${topPct.value}% threshold: ${currentThreshold.toFixed(3)}
   `;
 }
 
@@ -333,6 +364,25 @@ function refreshMapStyling() {
   if (!map || !map.getLayer("communes-fill")) return;
   const w = getWeights();
   const expr = scoreExpr(w, applyPhi.checked);
+  if (currentMapMode === "selection") {
+    map.setPaintProperty("communes-fill", "fill-color", [
+      "case",
+      [">=", expr, currentSelectionThreshold],
+      "#7af0a4",
+      "#182233",
+    ]);
+    map.setPaintProperty("communes-fill", "fill-opacity", [
+      "case",
+      [">=", expr, currentSelectionThreshold],
+      0.86,
+      0.26,
+    ]);
+    map.setPaintProperty("communes-line", "line-width", ["case", [">=", expr, currentSelectionThreshold], 1.1, 0.0]);
+    map.setPaintProperty("communes-line", "line-color", ["case", [">=", expr, currentSelectionThreshold], "#d7ffe8", "#000000"]);
+    mapStatus.textContent = `Selection-outcome view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`;
+    return;
+  }
+
   map.setPaintProperty("communes-fill", "fill-color", [
     "interpolate",
     ["linear"],
@@ -353,6 +403,7 @@ function refreshMapStyling() {
   ]);
   map.setPaintProperty("communes-line", "line-width", ["case", [">=", expr, currentThreshold], 1.25, 0.0]);
   map.setPaintProperty("communes-line", "line-color", ["case", [">=", expr, currentThreshold], "#ff7a59", "#000000"]);
+  mapStatus.textContent = `Merit-order view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`;
 }
 
 function refreshScenarioAndKPIs() {
@@ -404,6 +455,10 @@ function refreshScenarioAndKPIs() {
     eKWh += cap * 1000 * pvout;
   }
 
+  const selectedScores = attrs.filter((r) => r._selected).map((r) => r._score).filter((v) => Number.isFinite(v));
+  currentSelectionThreshold = selectedScores.length ? Math.min(...selectedScores) : Number.POSITIVE_INFINITY;
+  if (!Number.isFinite(currentSelectionThreshold)) currentSelectionThreshold = max + 1e-6;
+
   kpiCount.textContent = fmtNum(n, 0);
   kpiArea.textContent = fmtNum(area, 0);
   kpiCap.textContent = fmtNum(capMWp / 1000, 2);
@@ -424,7 +479,7 @@ function refreshScenarioAndKPIs() {
 
   const selectedRow = selectedCommuneInsee ? attrs.find((r) => r.insee === selectedCommuneInsee) : null;
   setContextPanel(selectedRow || null);
-  renderLegend(min, max, currentThreshold);
+  renderLegendFromState();
   refreshMapStyling();
 }
 
@@ -498,7 +553,6 @@ function buildMapStyle(pmtilesUrl) {
 }
 
 async function init() {
-  buildBadge.textContent = `Build ${APP_VERSION}`;
   loader.textContent = "Loading scenario attributes…";
   mapStatus.textContent = "Fetching latest assets";
 
@@ -546,7 +600,9 @@ async function init() {
     console.warn("PMTiles fallback -> GeoJSON:", reason);
     loader.classList.remove("hidden");
     loader.textContent = "PMTiles unavailable, loading GeoJSON fallback…";
-    mapStatus.textContent = "GeoJSON fallback mode";
+    mapStatus.textContent = currentMapMode === "selection"
+      ? "Selection-outcome view · GeoJSON fallback mode"
+      : "Merit-order view · GeoJSON fallback mode";
 
     try {
       const gj = await fetchJson("./data/communes_pillars.geojson");
@@ -596,7 +652,9 @@ async function init() {
     });
     map.resize();
     loader.classList.add("hidden");
-    mapStatus.textContent = usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode";
+    mapStatus.textContent = currentMapMode === "selection"
+      ? `Selection-outcome view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`
+      : `Merit-order view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`;
 
     if (usingPmtiles) {
       setTimeout(() => {
@@ -662,6 +720,9 @@ for (const el of [applyPhi, targetHa, mobilizationPct, density, topPct]) {
 }
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => applyPreset(button.dataset.preset));
+});
+mapModeButtons.forEach((button) => {
+  button.addEventListener("click", () => setMapMode(button.dataset.mapMode));
 });
 
 init().catch((error) => {

@@ -15,16 +15,11 @@
       <header class="hero">
         <div class="hero__copy">
           <p class="eyebrow">VeniVidiAV</p>
-          <h1>Municipal agrivoltaics explorer</h1>
+          <h1>VeniVidiAV</h1>
           <p class="hero__lede">
             Explore municipality-level suitability, rebalance the five pillars in real time,
             and see how deployment, electricity output, and top-ranked municipalities shift.
           </p>
-        </div>
-        <div class="hero__meta">
-          <span class="meta-pill">Dark map interface</span>
-          <span class="meta-pill">Scenario computation in browser</span>
-          <span class="meta-pill" id="buildBadge">Build __APP_VERSION__</span>
         </div>
       </header>
 
@@ -119,9 +114,13 @@
           <div class="map-overlay map-overlay--title">
             <div>
               <p class="section-kicker">Live explorer</p>
-              <h2>Municipality suitability map</h2>
+              <h2>Map view</h2>
             </div>
-            <p id="mapStatus">PMTiles / MapLibre rendering</p>
+            <div class="map-mode-switch" id="mapModeSwitch">
+              <button type="button" class="active" data-map-mode="merit">Merit order</button>
+              <button type="button" data-map-mode="selection">Selection outcome</button>
+            </div>
+            <p id="mapStatus">Merit-order view · PMTiles / MapLibre rendering</p>
           </div>
           <aside class="map-overlay map-overlay--context" id="contextPanel">
             <div class="context-empty" id="contextEmpty">
