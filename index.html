@@ -17,7 +17,7 @@
           <p class="eyebrow">VeniVidiAV</p>
           <h1>Municipal agrivoltaics explorer</h1>
           <p class="hero__lede">
-            Explore commune-level suitability, rebalance the five pillars in real time,
+            Explore municipality-level suitability, rebalance the five pillars in real time,
             and see how deployment, electricity output, and top-ranked municipalities shift.
           </p>
         </div>
@@ -42,12 +42,12 @@
               </div>
             </div>
             <p class="section-text">
-              Presets snap the weights to common narratives, while manual changes keep the total at 100%.
+              Presets snap the weights to common narratives, while manual changes keep the total at 100%; when one pillar goes down, the others rise together.
             </p>
             <div class="preset-row">
               <button data-preset="balanced">Balanced</button>
               <button data-preset="energy">Energy-first</button>
-              <button data-preset="agronomy">Agronomy-first</button>
+              <button data-preset="agronomy">Agricultural-intensity-first</button>
               <button data-preset="climate">Climate-first</button>
               <button data-preset="rural">Rural-first</button>
               <button data-preset="nature">Nature-first</button>
@@ -57,11 +57,11 @@
           </section>
 
           <section class="panel-section">
-            <div class="control"><label for="wE">Energy <span id="wE_val">20</span>%</label><input id="wE" type="range" min="0" max="100" step="1" value="20" /></div>
-            <div class="control"><label for="wA">Agricultural intensity <span id="wA_val">20</span>%</label><input id="wA" type="range" min="0" max="100" step="1" value="20" /></div>
-            <div class="control"><label for="wC">Climate resilience <span id="wC_val">20</span>%</label><input id="wC" type="range" min="0" max="100" step="1" value="20" /></div>
-            <div class="control"><label for="wR">Rural resilience <span id="wR_val">20</span>%</label><input id="wR" type="range" min="0" max="100" step="1" value="20" /></div>
-            <div class="control"><label for="wN">Nature conservation <span id="wN_val">20</span>%</label><input id="wN" type="range" min="0" max="100" step="1" value="20" /></div>
+            <div class="control"><label for="wE">Energy <span id="wE_val">20.0</span>%</label><input id="wE" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control"><label for="wA">Agricultural intensity <span id="wA_val">20.0</span>%</label><input id="wA" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control"><label for="wC">Climate resilience <span id="wC_val">20.0</span>%</label><input id="wC" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control"><label for="wR">Rural resilience <span id="wR_val">20.0</span>%</label><input id="wR" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control"><label for="wN">Nature conservation <span id="wN_val">20.0</span>%</label><input id="wN" type="range" min="0" max="100" step="0.1" value="20" /></div>
             <label class="toggle-row"><input type="checkbox" id="applyPhi" checked /> Apply <code>phi</code> feasibility multiplier</label>
             <div class="meta-line"><strong>Normalized weights</strong><span id="weightsNorm"></span></div>
           </section>
@@ -79,7 +79,7 @@
             <p class="section-kicker">Annual outputs</p>
             <h2>Instant summary</h2>
             <div class="kpi-grid">
-              <div class="kpi"><span>Selected communes</span><strong id="kpiCount">-</strong></div>
+              <div class="kpi"><span>Selected municipalities</span><strong id="kpiCount">-</strong></div>
               <div class="kpi"><span>Deployed area (ha)</span><strong id="kpiArea">-</strong></div>
               <div class="kpi"><span>Installed capacity (GWp)</span><strong id="kpiCap">-</strong></div>
               <div class="kpi"><span>Electricity output (TWh/y)</span><strong id="kpiE">-</strong></div>
@@ -104,11 +104,11 @@
             <div class="section-head">
               <div>
                 <p class="section-kicker">Leaderboard</p>
-                <h2>Top communes</h2>
+                <h2>Top municipalities</h2>
               </div>
             </div>
             <table id="topTable">
-              <thead><tr><th>#</th><th>Commune</th><th>Score</th><th>ELIG_HA</th></tr></thead>
+              <thead><tr><th>#</th><th>Municipality</th><th>Score</th><th>ELIG_HA</th></tr></thead>
               <tbody></tbody>
             </table>
           </section>
@@ -119,23 +119,23 @@
           <div class="map-overlay map-overlay--title">
             <div>
               <p class="section-kicker">Live explorer</p>
-              <h2>Commune suitability map</h2>
+              <h2>Municipality suitability map</h2>
             </div>
             <p id="mapStatus">PMTiles / MapLibre rendering</p>
           </div>
           <aside class="map-overlay map-overlay--context" id="contextPanel">
             <div class="context-empty" id="contextEmpty">
-              <p class="section-kicker">Click a commune</p>
+              <p class="section-kicker">Click a municipality</p>
               <h2>Context panel</h2>
               <p>
-                Click any commune on the map to inspect its score, feasibility, deployment contribution,
+                Click any municipality on the map to inspect its score, feasibility, deployment contribution,
                 and the pillar mix driving its ranking in the current scenario.
               </p>
             </div>
             <div class="context-card hidden" id="contextCard">
               <div class="context-head">
                 <div>
-                  <p class="section-kicker">Selected commune</p>
+                  <p class="section-kicker">Selected municipality</p>
                   <h2 id="contextTitle">-</h2>
                 </div>
                 <div class="context-rank" id="contextRank">Rank -</div>

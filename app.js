@@ -57,7 +57,7 @@ const presetButtons = [...document.querySelectorAll("[data-preset]")];
 const PRESETS = {
   balanced: { label: "Balanced", values: [20, 20, 20, 20, 20] },
   energy: { label: "Energy-first", values: [100, 0, 0, 0, 0] },
-  agronomy: { label: "Agronomy-first", values: [0, 100, 0, 0, 0] },
+  agronomy: { label: "Agricultural-intensity-first", values: [0, 100, 0, 0, 0] },
   climate: { label: "Climate-first", values: [0, 0, 100, 0, 0] },
   rural: { label: "Rural-first", values: [0, 0, 0, 100, 0] },
   nature: { label: "Nature-first", values: [0, 0, 0, 0, 100] },
@@ -106,6 +106,20 @@ function getRawWeights() {
   return Object.fromEntries(weightKeys.map((k) => [k, Number(sliders[k].value)]));
 }
 
+function getWeightStep() {
+  return Number(sliders[weightKeys[0]].step || 1);
+}
+
+function clampWeight(value) {
+  return Math.max(0, Math.min(100, Number(value)));
+}
+
+function quantizeWeight(value) {
+  const step = getWeightStep();
+  const units = Math.round(clampWeight(value) / step);
+  return Number((units * step).toFixed(6));
+}
+
 function getWeights() {
   const raw = getRawWeights();
   const sum = Object.values(raw).reduce((a, b) => a + b, 0);
@@ -125,7 +139,7 @@ function setPresetState(name) {
 function detectPresetName() {
   const current = weightKeys.map((k) => Number(sliders[k].value));
   for (const [name, preset] of Object.entries(PRESETS)) {
-    if (preset.values.every((value, idx) => value === current[idx])) {
+    if (preset.values.every((value, idx) => Math.abs(value - current[idx]) < 1e-6)) {
       return name;
     }
   }
@@ -134,51 +148,53 @@ function detectPresetName() {
 
 function rebalanceWeights(changedKey, changedValue) {
   const raw = getRawWeights();
-  const v = Math.max(0, Math.min(100, Number(changedValue)));
+  const step = getWeightStep();
+  const v = quantizeWeight(changedValue);
   raw[changedKey] = v;
 
   const others = weightKeys.filter((k) => k !== changedKey);
   const targetOthers = 100 - v;
   const currentOthers = others.map((k) => raw[k]);
   const sumOthers = currentOthers.reduce((a, b) => a + b, 0);
+  const targetUnits = Math.round(targetOthers / step);
 
   let newOthers;
   if (sumOthers <= 0) {
-    const base = Math.floor(targetOthers / others.length);
-    let rem = targetOthers - base * others.length;
+    const baseUnits = Math.floor(targetUnits / others.length);
+    let remUnits = targetUnits - baseUnits * others.length;
     newOthers = others.map(() => {
-      const add = rem > 0 ? 1 : 0;
-      rem -= add;
-      return base + add;
+      const add = remUnits > 0 ? 1 : 0;
+      remUnits -= add;
+      return Number(((baseUnits + add) * step).toFixed(6));
     });
   } else {
-    const scaled = currentOthers.map((x) => (x * targetOthers) / sumOthers);
-    const floored = scaled.map((x) => Math.floor(x));
-    let rem = targetOthers - floored.reduce((a, b) => a + b, 0);
-    const fracOrder = scaled
-      .map((x, i) => ({ i, frac: x - floored[i] }))
+    const scaledUnits = currentOthers.map((x) => (x / sumOthers) * targetUnits);
+    const flooredUnits = scaledUnits.map((x) => Math.floor(x));
+    let remUnits = targetUnits - flooredUnits.reduce((a, b) => a + b, 0);
+    const fracOrder = scaledUnits
+      .map((x, i) => ({ i, frac: x - flooredUnits[i] }))
       .sort((a, b) => b.frac - a.frac);
-    for (let t = 0; t < fracOrder.length && rem > 0; t += 1) {
-      floored[fracOrder[t].i] += 1;
-      rem -= 1;
+    for (let t = 0; t < fracOrder.length && remUnits > 0; t += 1) {
+      flooredUnits[fracOrder[t].i] += 1;
+      remUnits -= 1;
     }
-    newOthers = floored;
+    newOthers = flooredUnits.map((units) => Number((units * step).toFixed(6)));
   }
 
-  sliders[changedKey].value = String(v);
+  sliders[changedKey].value = v.toFixed(1);
   others.forEach((k, i) => {
-    sliders[k].value = String(newOthers[i]);
+    sliders[k].value = newOthers[i].toFixed(1);
   });
 }
 
 function updateLabels() {
-  for (const k of weightKeys) sliderVals[k].textContent = sliders[k].value;
+  for (const k of weightKeys) sliderVals[k].textContent = Number(sliders[k].value).toFixed(1);
   targetHaVal.textContent = targetHa.value;
   mobilizationPctVal.textContent = Number(mobilizationPct.value).toFixed(1);
   densityVal.textContent = Number(density.value).toFixed(2);
   topPctVal.textContent = topPct.value;
   const total = Object.values(getRawWeights()).reduce((a, b) => a + b, 0);
-  weightTotalEl.textContent = `${total}%`;
+  weightTotalEl.textContent = `${total.toFixed(1)}%`;
   const w = getWeights();
   weightsNormEl.textContent = `E ${w.E.toFixed(2)} · A ${w.A.toFixed(2)} · C ${w.C.toFixed(2)} · R ${w.R.toFixed(2)} · N ${w.N.toFixed(2)}`;
   setPresetState(detectPresetName());
@@ -221,7 +237,7 @@ function scenarioMeaning(w, target, area, outputTWh) {
   const body = `${leadText} At the current settings, the app fills a ${targetShort} deployment portfolio, selecting ${fmtNum(
     attrs.filter((r) => r._selected).length,
     0,
-  )} communes for ${fmtNum(area, 0)} ha and about ${fmtNum(outputTWh, 3)} TWh/year. Use the map clicks to see which local pillar mix explains a commune's position in that portfolio.`;
+  )} municipalities for ${fmtNum(area, 0)} ha and about ${fmtNum(outputTWh, 3)} TWh/year. Use the map clicks to see which local pillar mix explains a municipality's position in that portfolio.`;
 
   return { lead: leadText, tags, body };
 }
@@ -268,7 +284,7 @@ function setContextPanel(row) {
   contextPhi.textContent = fmtNum(row.phi ?? 0, 3);
   contextElig.textContent = `${fmtNum(row.ELIG_HA || 0, 0)} ha`;
   contextSelected.textContent = selectedText;
-  contextNarrative.textContent = `${best.label} contributes the most to this commune's current utility score. ${
+  contextNarrative.textContent = `${best.label} contributes the most to this municipality's current utility score. ${
     row._selected
       ? "It is currently inside the selected deployment portfolio."
       : "It remains visible on the map, but it is not captured by the current deployment tranche."
@@ -304,8 +320,8 @@ function scoreExpr(w, withPhi) {
 
 function renderLegend(min, max, threshold) {
   legendEl.innerHTML = `
-    <strong>Commune utility score</strong><br/>
-    <small>Bright outlines mark communes above the visual top threshold.</small>
+    <strong>Municipality utility score</strong><br/>
+    <small>Bright outlines mark municipalities above the visual top threshold.</small>
     <div class="legend-scale"></div>
     Min: ${min.toFixed(3)}<br/>
     Max: ${max.toFixed(3)}<br/>
@@ -572,7 +588,9 @@ async function init() {
     updateLabels();
     refreshScenarioAndKPIs();
     map.fitBounds(FR_BOUNDS, {
-      padding: { top: 24, right: 24, bottom: 24, left: window.innerWidth > 1160 ? 430 : 24 },
+      padding: window.innerWidth > 1160
+        ? { top: 28, right: 54, bottom: 28, left: 54 }
+        : { top: 24, right: 24, bottom: 24, left: 24 },
       maxZoom: 7.2,
       duration: 0,
     });
