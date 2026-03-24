@@ -44,6 +44,23 @@
             mobilization rate, feasibility multiplier, and density assumptions are applied.
           </p>
         </section>
+        <section class="panel-section">
+          <p class="section-kicker">Scoring</p>
+          <h2>Scoring and normalization</h2>
+          <p class="section-text">
+            The explorer works with municipality-level indicators that are first oriented so that higher values always mean
+            a better fit for the corresponding objective, then normalized onto a common scale before aggregation. Within each
+            pillar, the component indicators are combined into one composite pillar score. Scenario weights then combine the
+            five pillar scores into a merit order, while deployment settings determine which municipalities are ultimately
+            selected. Full derived inputs, documentation, and reproducible workflow files are available on Zenodo.
+          </p>
+          <ol class="info-list">
+            <li>Raw spatial and statistical layers are harmonized to the municipality level.</li>
+            <li>Indicators are oriented and normalized so that they can be compared across dimensions.</li>
+            <li>Indicator scores are aggregated within each pillar to form composite pillar scores.</li>
+            <li>Pillar weights define the merit order, and scenario settings define the final selected portfolio.</li>
+          </ol>
+        </section>
 
         <section class="panel-section panel-section--wide">
           <p class="section-kicker">Pillars</p>
@@ -188,7 +205,7 @@
                 <tr>
                   <td><strong>C2</strong> Heat exposure</td>
                   <td>Meteo-France Tmax (1996-2024)</td>
-                  <td>Excess degree-days (°C-days; grid then municipality average)</td>
+                  <td>Excess degree-days (&deg;C-days; grid then municipality average)</td>
                   <td>Captures exposure to damaging heat conditions.</td>
                 </tr>
                 <tr>

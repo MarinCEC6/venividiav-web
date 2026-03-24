@@ -600,6 +600,16 @@ code { color: var(--accent-3); }
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+.info-table__group td {
+  padding-top: 14px;
+  padding-bottom: 8px;
+  color: var(--accent);
+  font-size: 0.77rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(79, 209, 255, 0.04);
+}
 .info-list {
   margin: 10px 0 0;
   padding-left: 1.2rem;
