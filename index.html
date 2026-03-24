@@ -21,27 +21,16 @@
           </p>
           <div class="hero__toolbar">
             <div class="view-switch">
-              <button type="button" class="active" data-map-mode="merit">Merit order</button>
-              <button type="button" data-map-mode="selection">Selection outcome</button>
-              <button type="button" class="view-switch__secondary" id="aboutToggle" aria-expanded="false">About VeniVidiAV</button>
+              <button type="button" class="active" data-app-view="merit">Merit order</button>
+              <button type="button" data-app-view="selection">Selection outcome</button>
+              <button type="button" class="view-switch__secondary" data-app-view="about">About VeniVidiAV</button>
             </div>
             <p class="hero__status" id="mapStatus">Merit-order view · PMTiles / MapLibre rendering</p>
-          </div>
-          <div class="hero__about hidden" id="heroAbout">
-            <p>
-              VeniVidiAV is a decision-support explorer for agrivoltaic siting. It lets users rebalance five pillars
-              and instantly compare how those choices reshape both the merit order and the selected deployment portfolio.
-            </p>
-            <p>
-              The pillars summarize: Energy potential, Agricultural intensity, Climate resilience, Rural resilience,
-              and Nature conservation. The merit-order view shows relative ranking, while the selection-outcome view
-              shows which municipalities are actually captured under the current deployment settings.
-            </p>
           </div>
         </div>
       </header>
 
-      <main class="layout">
+      <main class="layout" id="appExplorer">
         <aside class="panel">
           <section class="panel-section panel-section--intro">
             <div class="section-head">
@@ -113,6 +102,16 @@
             <p class="scenario-narrative-body" id="scenarioNarrativeBody"></p>
           </section>
 
+          <section class="panel-section panel-section--legend">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Map legend</p>
+                <h2>How to read the map</h2>
+              </div>
+            </div>
+            <div id="legend" class="legend legend--panel"></div>
+          </section>
+
           <section class="panel-section panel-section--table">
             <div class="section-head">
               <div>
@@ -150,9 +149,50 @@
             </div>
           </aside>
           <div id="map"></div>
-          <div id="legend" class="legend"></div>
         </section>
       </main>
+
+      <section class="about-view hidden" id="aboutView">
+        <div class="about-grid">
+          <section class="about-card">
+            <p class="section-kicker">About</p>
+            <h2>What VeniVidiAV does</h2>
+            <p>
+              VeniVidiAV is a decision-support explorer for agrivoltaic siting. It lets users rebalance five pillars
+              and immediately compare how those choices reshape both the merit order and the selected deployment portfolio.
+            </p>
+            <p>
+              The goal is not to produce a single fixed ranking, but to make the consequences of alternative priorities
+              visible, comparable, and transparent.
+            </p>
+          </section>
+
+          <section class="about-card">
+            <p class="section-kicker">Modes</p>
+            <h2>How to use the views</h2>
+            <p>
+              <strong>Merit order</strong> shows the continuous suitability ranking implied by the current pillar weights.
+              It is useful for seeing where municipalities rise or fall in the national ordering.
+            </p>
+            <p>
+              <strong>Selection outcome</strong> shows which municipalities are actually selected once deployment assumptions
+              are applied, including the target area, mobilization rate, feasibility multiplier, and density assumptions.
+            </p>
+          </section>
+
+          <section class="about-card about-card--wide">
+            <p class="section-kicker">Pillars</p>
+            <h2>What the five pillars represent</h2>
+            <div class="about-pillars">
+              <div><strong>Energy</strong><span>Solar productivity, grid access, and parcel structure.</span></div>
+              <div><strong>Agricultural intensity</strong><span>Irrigation, pesticide pressure, and on-farm energy dependence.</span></div>
+              <div><strong>Climate resilience</strong><span>Exposure to water stress, heat stress, and frost-related constraints.</span></div>
+              <div><strong>Rural resilience</strong><span>Structural agricultural fragility and long-run decline indicators.</span></div>
+              <div><strong>Nature conservation</strong><span>Ecological infrastructure and landscape context.</span></div>
+            </div>
+          </section>
+        </div>
+      </section>
     </div>
 
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>

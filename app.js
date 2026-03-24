@@ -8,9 +8,9 @@ const weightsNormEl = document.getElementById("weightsNorm");
 const weightTotalEl = document.getElementById("weightTotal");
 const activePresetEl = document.getElementById("activePreset");
 const mapStatus = document.getElementById("mapStatus");
-const mapModeButtons = [...document.querySelectorAll("[data-map-mode]")];
-const aboutToggle = document.getElementById("aboutToggle");
-const heroAbout = document.getElementById("heroAbout");
+const appViewButtons = [...document.querySelectorAll("[data-app-view]")];
+const appExplorer = document.getElementById("appExplorer");
+const aboutView = document.getElementById("aboutView");
 const scenarioNarrativeLead = document.getElementById("scenarioNarrativeLead");
 const scenarioNarrativeTags = document.getElementById("scenarioNarrativeTags");
 const scenarioNarrativeBody = document.getElementById("scenarioNarrativeBody");
@@ -75,6 +75,7 @@ let currentSelectionThreshold = 0.8;
 let usingPmtiles = true;
 let currentPreset = "balanced";
 let currentMapMode = "merit";
+let currentAppView = "merit";
 let selectedCommuneInsee = null;
 const FR_BOUNDS = [
   [-5.8, 41.0],
@@ -207,20 +208,28 @@ function updateLabels() {
 
 function setMapMode(mode) {
   currentMapMode = mode === "selection" ? "selection" : "merit";
-  mapModeButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.mapMode === currentMapMode);
-  });
   if (attrs.length) {
     renderLegendFromState();
     refreshMapStyling();
   }
 }
 
-function toggleAbout(force) {
-  const shouldShow = typeof force === "boolean" ? force : heroAbout.classList.contains("hidden");
-  heroAbout.classList.toggle("hidden", !shouldShow);
-  aboutToggle.setAttribute("aria-expanded", shouldShow ? "true" : "false");
-  aboutToggle.classList.toggle("active", shouldShow);
+function setAppView(view) {
+  currentAppView = ["merit", "selection", "about"].includes(view) ? view : "merit";
+  appViewButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.appView === currentAppView);
+  });
+
+  const aboutMode = currentAppView === "about";
+  appExplorer.classList.toggle("hidden", aboutMode);
+  aboutView.classList.toggle("hidden", !aboutMode);
+
+  if (aboutMode) {
+    mapStatus.textContent = "About view · Framework and pillar definitions";
+    return;
+  }
+
+  setMapMode(currentAppView === "selection" ? "selection" : "merit");
 }
 
 function pillarDefinitions() {
@@ -729,10 +738,9 @@ for (const el of [applyPhi, targetHa, mobilizationPct, density, topPct]) {
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => applyPreset(button.dataset.preset));
 });
-mapModeButtons.forEach((button) => {
-  button.addEventListener("click", () => setMapMode(button.dataset.mapMode));
+appViewButtons.forEach((button) => {
+  button.addEventListener("click", () => setAppView(button.dataset.appView));
 });
-aboutToggle.addEventListener("click", () => toggleAbout());
 contextClose.addEventListener("click", () => setContextPanel(null));
 
 init().catch((error) => {
