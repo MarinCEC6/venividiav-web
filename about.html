@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>VeniVidiAV — About</title>
+    <title>VeniVidiAV - About</title>
     <link rel="stylesheet" href="./style.css?v=__APP_VERSION__" />
   </head>
   <body>
@@ -30,8 +30,8 @@
           <h2>What this tool is for</h2>
           <p class="section-text">
             VeniVidiAV helps users compare agrivoltaic siting strategies under alternative objective priorities.
-            Rather than producing one fixed “best” map, it makes visible how different choices change both the merit order
-            of municipalities and the subset ultimately selected under a deployment scenario.
+            Rather than producing one fixed "best" map, it makes visible how different choices reshape both the
+            merit order of municipalities and the subset ultimately selected under a deployment scenario.
           </p>
         </section>
 
@@ -45,41 +45,121 @@
           </p>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section panel-section--wide">
           <p class="section-kicker">Pillars</p>
-          <h2>What the five pillars represent</h2>
+          <h2>What the five pillars contain</h2>
           <div class="info-pillars">
             <div class="info-pillar">
               <strong>Energy</strong>
-              <span>Solar productivity, grid access, and parcel structure.</span>
+              <span>Combines PV productivity, grid access, and parcel structure to represent expected yield and developability.</span>
+              <ul class="info-sublist">
+                <li>PVOUT</li>
+                <li>Distance to nearest substation</li>
+                <li>Average parcel size</li>
+              </ul>
             </div>
             <div class="info-pillar">
               <strong>Agricultural intensity</strong>
-              <span>Irrigation, pesticide pressure, and on-farm energy dependence.</span>
+              <span>Targets input-intensive systems where agrivoltaics may interact more strongly with farm practices and resource use.</span>
+              <ul class="info-sublist">
+                <li>Irrigation withdrawals per hectare</li>
+                <li>Pesticide intensity proxy</li>
+                <li>On-farm primary energy dependence</li>
+              </ul>
             </div>
             <div class="info-pillar">
               <strong>Climate resilience</strong>
-              <span>Exposure to water stress, heat stress, and frost-related constraints.</span>
+              <span>Captures climatic exposure conditions under which shading may provide stronger agronomic value.</span>
+              <ul class="info-sublist">
+                <li>Water deficit</li>
+                <li>Heat exposure</li>
+                <li>Frost exposure</li>
+              </ul>
             </div>
             <div class="info-pillar">
               <strong>Rural resilience</strong>
-              <span>Structural agricultural fragility and long-run decline indicators.</span>
+              <span>Represents long-run agricultural fragility and structural decline in local farming systems.</span>
+              <ul class="info-sublist">
+                <li>Agricultural employment decline</li>
+                <li>SAU decline</li>
+                <li>PBS decline</li>
+              </ul>
             </div>
             <div class="info-pillar">
               <strong>Nature conservation</strong>
-              <span>Ecological infrastructure and landscape context.</span>
+              <span>Represents ecological infrastructure and landscape context in and around agricultural land.</span>
+              <ul class="info-sublist">
+                <li>Hedgerow density</li>
+                <li>Permanent grassland share</li>
+                <li>Forest context</li>
+              </ul>
             </div>
           </div>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section panel-section--wide">
           <p class="section-kicker">Data</p>
-          <h2>Main data families used in the tool</h2>
+          <h2>Main data blocks used in the explorer</h2>
           <p class="section-text">
-            The explorer combines municipality-level derived indicators for energy siting conditions, agricultural intensity,
-            climate exposure, rural fragility, nature context, and feasibility constraints. Deployment outputs further rely on
-            eligible agricultural area, PV productivity, and density assumptions.
+            The explorer is built from municipality-level derived indicators. Raw spatial layers are harmonized
+            to a common municipal support before scoring and deployment accounting.
           </p>
+          <div class="info-table-wrap">
+            <table class="info-table">
+              <thead>
+                <tr>
+                  <th>Block</th>
+                  <th>Main inputs</th>
+                  <th>Typical sources</th>
+                  <th>Use in the tool</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Feasibility</td>
+                  <td>Agricultural land, Natura 2000, slope</td>
+                  <td>RPG, Natura 2000, DEM, municipal boundaries</td>
+                  <td>Defines the eligible agricultural share (<code>phi</code>) and scales deployment potential.</td>
+                </tr>
+                <tr>
+                  <td>Energy</td>
+                  <td>PV productivity, substations, parcel geometry</td>
+                  <td>Global Solar Atlas, ODRE, RPG</td>
+                  <td>Builds the Energy pillar and translates selected land into annual electricity output.</td>
+                </tr>
+                <tr>
+                  <td>Agricultural intensity</td>
+                  <td>Irrigation, pesticide pressure, farm energy use</td>
+                  <td>BNPE, ADONIS / Solagro, ClimAgri / ORE proxies</td>
+                  <td>Builds the Agricultural intensity pillar.</td>
+                </tr>
+                <tr>
+                  <td>Climate resilience</td>
+                  <td>Water deficit, heat, frost</td>
+                  <td>Meteo-France climate series</td>
+                  <td>Builds the Climate resilience pillar.</td>
+                </tr>
+                <tr>
+                  <td>Rural resilience</td>
+                  <td>Employment, SAU, PBS change</td>
+                  <td>Agreste structural series</td>
+                  <td>Builds the Rural resilience pillar.</td>
+                </tr>
+                <tr>
+                  <td>Nature conservation</td>
+                  <td>Hedgerows, permanent grassland, forest context</td>
+                  <td>IGN landscape layers, RPG</td>
+                  <td>Builds the Nature conservation pillar.</td>
+                </tr>
+                <tr>
+                  <td>Observed AV projects</td>
+                  <td>Project locations and matched municipality identifiers</td>
+                  <td>BATAVIA</td>
+                  <td>Used for the revealed-preference benchmark and BAU comparison logic.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section class="panel-section">
@@ -89,7 +169,7 @@
             <li>Start from a preset or rebalance the five pillar weights manually.</li>
             <li>Use <strong>Merit order</strong> to see how ranking patterns shift spatially.</li>
             <li>Use <strong>Selection outcome</strong> to see which municipalities are actually captured.</li>
-            <li>Then adjust deployment assumptions to evaluate how scenario outputs and selected areas change.</li>
+            <li>Adjust deployment assumptions to evaluate how scenario outputs and selected areas change.</li>
           </ol>
         </section>
       </main>
