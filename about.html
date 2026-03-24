@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>VeniVidiAV — About</title>
+    <link rel="stylesheet" href="./style.css?v=__APP_VERSION__" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero__copy">
+          <h1>About VeniVidiAV</h1>
+          <p class="hero__lede">
+            A decision-support tool for exploring how agrivoltaic siting priorities reshape rankings,
+            deployment portfolios, and spatial trade-offs.
+          </p>
+          <div class="hero__toolbar">
+            <a class="hero__link" href="./index.html">Open the explorer</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="info-page">
+        <section class="panel-section">
+          <p class="section-kicker">Purpose</p>
+          <h2>What this tool is for</h2>
+          <p class="section-text">
+            VeniVidiAV helps users compare agrivoltaic siting strategies under alternative objective priorities.
+            Rather than producing one fixed “best” map, it makes visible how different choices change both the merit order
+            of municipalities and the subset ultimately selected under a deployment scenario.
+          </p>
+        </section>
+
+        <section class="panel-section">
+          <p class="section-kicker">Map modes</p>
+          <h2>How to read the explorer</h2>
+          <p class="section-text">
+            <strong>Merit order</strong> shows the continuous ranking implied by the current pillar weights.
+            <strong>Selection outcome</strong> shows which municipalities are actually selected once the deployment target,
+            mobilization rate, feasibility multiplier, and density assumptions are applied.
+          </p>
+        </section>
+
+        <section class="panel-section">
+          <p class="section-kicker">Pillars</p>
+          <h2>What the five pillars represent</h2>
+          <div class="info-pillars">
+            <div class="info-pillar">
+              <strong>Energy</strong>
+              <span>Solar productivity, grid access, and parcel structure.</span>
+            </div>
+            <div class="info-pillar">
+              <strong>Agricultural intensity</strong>
+              <span>Irrigation, pesticide pressure, and on-farm energy dependence.</span>
+            </div>
+            <div class="info-pillar">
+              <strong>Climate resilience</strong>
+              <span>Exposure to water stress, heat stress, and frost-related constraints.</span>
+            </div>
+            <div class="info-pillar">
+              <strong>Rural resilience</strong>
+              <span>Structural agricultural fragility and long-run decline indicators.</span>
+            </div>
+            <div class="info-pillar">
+              <strong>Nature conservation</strong>
+              <span>Ecological infrastructure and landscape context.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <p class="section-kicker">Data</p>
+          <h2>Main data families used in the tool</h2>
+          <p class="section-text">
+            The explorer combines municipality-level derived indicators for energy siting conditions, agricultural intensity,
+            climate exposure, rural fragility, nature context, and feasibility constraints. Deployment outputs further rely on
+            eligible agricultural area, PV productivity, and density assumptions.
+          </p>
+        </section>
+
+        <section class="panel-section">
+          <p class="section-kicker">Usage</p>
+          <h2>Suggested workflow</h2>
+          <ol class="info-list">
+            <li>Start from a preset or rebalance the five pillar weights manually.</li>
+            <li>Use <strong>Merit order</strong> to see how ranking patterns shift spatially.</li>
+            <li>Use <strong>Selection outcome</strong> to see which municipalities are actually captured.</li>
+            <li>Then adjust deployment assumptions to evaluate how scenario outputs and selected areas change.</li>
+          </ol>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

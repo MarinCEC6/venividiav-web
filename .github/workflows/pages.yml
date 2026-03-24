@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           APP_VERSION="$(date +%Y%m%d)-${GITHUB_SHA::7}"
-          sed -i "s/__APP_VERSION__/${APP_VERSION}/g" index.html app.js
+          sed -i "s/__APP_VERSION__/${APP_VERSION}/g" index.html about.html app.js
           echo "Stamped APP_VERSION=${APP_VERSION}"
 
       - uses: actions/configure-pages@v5

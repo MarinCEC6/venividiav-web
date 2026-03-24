@@ -8,9 +8,7 @@ const weightsNormEl = document.getElementById("weightsNorm");
 const weightTotalEl = document.getElementById("weightTotal");
 const activePresetEl = document.getElementById("activePreset");
 const mapStatus = document.getElementById("mapStatus");
-const appViewButtons = [...document.querySelectorAll("[data-app-view]")];
-const appExplorer = document.getElementById("appExplorer");
-const aboutView = document.getElementById("aboutView");
+const mapModeButtons = [...document.querySelectorAll("[data-map-mode]")];
 const scenarioNarrativeLead = document.getElementById("scenarioNarrativeLead");
 const scenarioNarrativeTags = document.getElementById("scenarioNarrativeTags");
 const scenarioNarrativeBody = document.getElementById("scenarioNarrativeBody");
@@ -75,7 +73,6 @@ let currentSelectionThreshold = 0.8;
 let usingPmtiles = true;
 let currentPreset = "balanced";
 let currentMapMode = "merit";
-let currentAppView = "merit";
 let selectedCommuneInsee = null;
 const FR_BOUNDS = [
   [-5.8, 41.0],
@@ -208,28 +205,13 @@ function updateLabels() {
 
 function setMapMode(mode) {
   currentMapMode = mode === "selection" ? "selection" : "merit";
+  mapModeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.mapMode === currentMapMode);
+  });
   if (attrs.length) {
     renderLegendFromState();
     refreshMapStyling();
   }
-}
-
-function setAppView(view) {
-  currentAppView = ["merit", "selection", "about"].includes(view) ? view : "merit";
-  appViewButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.appView === currentAppView);
-  });
-
-  const aboutMode = currentAppView === "about";
-  appExplorer.classList.toggle("hidden", aboutMode);
-  aboutView.classList.toggle("hidden", !aboutMode);
-
-  if (aboutMode) {
-    mapStatus.textContent = "About view · Framework and pillar definitions";
-    return;
-  }
-
-  setMapMode(currentAppView === "selection" ? "selection" : "merit");
 }
 
 function pillarDefinitions() {
@@ -738,8 +720,8 @@ for (const el of [applyPhi, targetHa, mobilizationPct, density, topPct]) {
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => applyPreset(button.dataset.preset));
 });
-appViewButtons.forEach((button) => {
-  button.addEventListener("click", () => setAppView(button.dataset.appView));
+mapModeButtons.forEach((button) => {
+  button.addEventListener("click", () => setMapMode(button.dataset.mapMode));
 });
 contextClose.addEventListener("click", () => setContextPanel(null));
 
