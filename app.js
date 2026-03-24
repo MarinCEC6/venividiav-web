@@ -9,10 +9,13 @@ const weightTotalEl = document.getElementById("weightTotal");
 const activePresetEl = document.getElementById("activePreset");
 const mapStatus = document.getElementById("mapStatus");
 const mapModeButtons = [...document.querySelectorAll("[data-map-mode]")];
+const aboutToggle = document.getElementById("aboutToggle");
+const heroAbout = document.getElementById("heroAbout");
 const scenarioNarrativeLead = document.getElementById("scenarioNarrativeLead");
 const scenarioNarrativeTags = document.getElementById("scenarioNarrativeTags");
 const scenarioNarrativeBody = document.getElementById("scenarioNarrativeBody");
-const contextEmpty = document.getElementById("contextEmpty");
+const contextPanel = document.getElementById("contextPanel");
+const contextClose = document.getElementById("contextClose");
 const contextCard = document.getElementById("contextCard");
 const contextTitle = document.getElementById("contextTitle");
 const contextRank = document.getElementById("contextRank");
@@ -213,6 +216,13 @@ function setMapMode(mode) {
   }
 }
 
+function toggleAbout(force) {
+  const shouldShow = typeof force === "boolean" ? force : heroAbout.classList.contains("hidden");
+  heroAbout.classList.toggle("hidden", !shouldShow);
+  aboutToggle.setAttribute("aria-expanded", shouldShow ? "true" : "false");
+  aboutToggle.classList.toggle("active", shouldShow);
+}
+
 function pillarDefinitions() {
   return [
     { key: "E", field: "P_E", label: "Energy" },
@@ -277,8 +287,7 @@ function updateScenarioNarrative(area, outputTWh) {
 
 function setContextPanel(row) {
   if (!row) {
-    contextEmpty.classList.remove("hidden");
-    contextCard.classList.add("hidden");
+    contextPanel.classList.add("hidden");
     return;
   }
 
@@ -289,8 +298,7 @@ function setContextPanel(row) {
     ? `Yes — ${fmtNum(row._take_ha || 0, 0)} ha allocated`
     : "No — below current cut-off";
 
-  contextEmpty.classList.add("hidden");
-  contextCard.classList.remove("hidden");
+  contextPanel.classList.remove("hidden");
   contextTitle.textContent = `${row.name} (${row.insee})`;
   contextRank.textContent = `Rank ${fmtNum((row._rank || 0), 0)}`;
   contextScore.textContent = row._score?.toFixed(3) ?? "-";
@@ -724,6 +732,8 @@ presetButtons.forEach((button) => {
 mapModeButtons.forEach((button) => {
   button.addEventListener("click", () => setMapMode(button.dataset.mapMode));
 });
+aboutToggle.addEventListener("click", () => toggleAbout());
+contextClose.addEventListener("click", () => setContextPanel(null));
 
 init().catch((error) => {
   console.error(error);

@@ -14,12 +14,30 @@
     <div class="app-shell">
       <header class="hero">
         <div class="hero__copy">
-          <p class="eyebrow">VeniVidiAV</p>
           <h1>VeniVidiAV</h1>
           <p class="hero__lede">
             Explore municipality-level suitability, rebalance the five pillars in real time,
             and see how deployment, electricity output, and top-ranked municipalities shift.
           </p>
+          <div class="hero__toolbar">
+            <div class="view-switch">
+              <button type="button" class="active" data-map-mode="merit">Merit order</button>
+              <button type="button" data-map-mode="selection">Selection outcome</button>
+              <button type="button" class="view-switch__secondary" id="aboutToggle" aria-expanded="false">About VeniVidiAV</button>
+            </div>
+            <p class="hero__status" id="mapStatus">Merit-order view · PMTiles / MapLibre rendering</p>
+          </div>
+          <div class="hero__about hidden" id="heroAbout">
+            <p>
+              VeniVidiAV is a decision-support explorer for agrivoltaic siting. It lets users rebalance five pillars
+              and instantly compare how those choices reshape both the merit order and the selected deployment portfolio.
+            </p>
+            <p>
+              The pillars summarize: Energy potential, Agricultural intensity, Climate resilience, Rural resilience,
+              and Nature conservation. The merit-order view shows relative ranking, while the selection-outcome view
+              shows which municipalities are actually captured under the current deployment settings.
+            </p>
+          </div>
         </div>
       </header>
 
@@ -111,27 +129,9 @@
 
         <section class="map-wrap">
           <div id="loader" class="loader">Loading map assets…</div>
-          <div class="map-overlay map-overlay--title">
-            <div>
-              <p class="section-kicker">Live explorer</p>
-              <h2>Map view</h2>
-            </div>
-            <div class="map-mode-switch" id="mapModeSwitch">
-              <button type="button" class="active" data-map-mode="merit">Merit order</button>
-              <button type="button" data-map-mode="selection">Selection outcome</button>
-            </div>
-            <p id="mapStatus">Merit-order view · PMTiles / MapLibre rendering</p>
-          </div>
-          <aside class="map-overlay map-overlay--context" id="contextPanel">
-            <div class="context-empty" id="contextEmpty">
-              <p class="section-kicker">Click a municipality</p>
-              <h2>Context panel</h2>
-              <p>
-                Click any municipality on the map to inspect its score, feasibility, deployment contribution,
-                and the pillar mix driving its ranking in the current scenario.
-              </p>
-            </div>
-            <div class="context-card hidden" id="contextCard">
+          <aside class="map-overlay map-overlay--context hidden" id="contextPanel">
+            <button type="button" class="context-close" id="contextClose" aria-label="Close context panel">×</button>
+            <div class="context-card" id="contextCard">
               <div class="context-head">
                 <div>
                   <p class="section-kicker">Selected municipality</p>
