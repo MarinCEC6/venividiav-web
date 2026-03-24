@@ -48,6 +48,11 @@
         <section class="panel-section panel-section--wide">
           <p class="section-kicker">Pillars</p>
           <h2>What the five pillars contain</h2>
+          <p class="section-text">
+            Each pillar combines several municipality-level indicators that are normalized onto a common scale before
+            scenario weighting. The explorer does not display raw variables directly; it shows the resulting composite
+            scores used in the ranking and deployment logic.
+          </p>
           <div class="info-pillars">
             <div class="info-pillar">
               <strong>Energy</strong>
@@ -102,59 +107,148 @@
           <h2>Main data blocks used in the explorer</h2>
           <p class="section-text">
             The explorer is built from municipality-level derived indicators. Raw spatial layers are harmonized
-            to a common municipal support before scoring and deployment accounting.
+            to a common municipal support before scoring and deployment accounting. The public release of the
+            explorer inputs, derived indicators, scenario outputs, and workflow documentation is available on
+            Zenodo: <a href="https://doi.org/10.5281/zenodo.19109614" target="_blank" rel="noopener noreferrer">10.5281/zenodo.19109614</a>.
           </p>
           <div class="info-table-wrap">
             <table class="info-table">
               <thead>
                 <tr>
-                  <th>Block</th>
-                  <th>Main inputs</th>
-                  <th>Typical sources</th>
-                  <th>Use in the tool</th>
+                  <th>Indicator</th>
+                  <th>Source</th>
+                  <th>Measurement</th>
+                  <th>Role in the explorer</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Feasibility</td>
-                  <td>Agricultural land, Natura 2000, slope</td>
-                  <td>RPG, Natura 2000, DEM, municipal boundaries</td>
-                  <td>Defines the eligible agricultural share (<code>phi</code>) and scales deployment potential.</td>
+                <tr class="info-table__group">
+                  <td colspan="4">Feasibility mask</td>
                 </tr>
                 <tr>
-                  <td>Energy</td>
-                  <td>PV productivity, substations, parcel geometry</td>
-                  <td>Global Solar Atlas, ODRE, RPG</td>
-                  <td>Builds the Energy pillar and translates selected land into annual electricity output.</td>
+                  <td><strong>Eligibility share</strong> (<code>phi</code>)</td>
+                  <td>RPG (2022), Natura 2000, DEM slope, ADMIN-EXPRESS (2025)</td>
+                  <td>Share of eligible agricultural land (ratio; municipality level)</td>
+                  <td>Defines the feasible agricultural universe and scales land, capacity, and electricity outputs.</td>
+                </tr>
+
+                <tr class="info-table__group">
+                  <td colspan="4">Energy pillar</td>
                 </tr>
                 <tr>
-                  <td>Agricultural intensity</td>
-                  <td>Irrigation, pesticide pressure, farm energy use</td>
-                  <td>BNPE, ADONIS / Solagro, ClimAgri / ORE proxies</td>
-                  <td>Builds the Agricultural intensity pillar.</td>
+                  <td><strong>E1</strong> Grid proximity</td>
+                  <td>ODRE substations (2025)</td>
+                  <td>Distance to nearest substation (km; municipality centroid)</td>
+                  <td>Proxy for grid access and connection conditions.</td>
                 </tr>
                 <tr>
-                  <td>Climate resilience</td>
-                  <td>Water deficit, heat, frost</td>
-                  <td>Meteo-France climate series</td>
-                  <td>Builds the Climate resilience pillar.</td>
+                  <td><strong>E2</strong> Solar resource</td>
+                  <td>Global Solar Atlas v2</td>
+                  <td>PVOUT (kWh/kWp/year; municipality level)</td>
+                  <td>Captures expected photovoltaic productivity and is also used in electricity accounting.</td>
                 </tr>
                 <tr>
-                  <td>Rural resilience</td>
-                  <td>Employment, SAU, PBS change</td>
-                  <td>Agreste structural series</td>
-                  <td>Builds the Rural resilience pillar.</td>
+                  <td><strong>E3</strong> Parcel structure</td>
+                  <td>RPG (2022)</td>
+                  <td>Mean parcel area (ha/parcel; municipality level)</td>
+                  <td>Proxy for developability and layout conditions.</td>
+                </tr>
+
+                <tr class="info-table__group">
+                  <td colspan="4">Agricultural intensity pillar</td>
                 </tr>
                 <tr>
-                  <td>Nature conservation</td>
-                  <td>Hedgerows, permanent grassland, forest context</td>
-                  <td>IGN landscape layers, RPG</td>
-                  <td>Builds the Nature conservation pillar.</td>
+                  <td><strong>A1</strong> Irrigation withdrawals</td>
+                  <td>BNPE (2016-2024)</td>
+                  <td>Agricultural withdrawals per hectare (m<sup>3</sup>/ha; municipality level)</td>
+                  <td>Proxy for irrigation pressure.</td>
                 </tr>
                 <tr>
-                  <td>Observed AV projects</td>
-                  <td>Project locations and matched municipality identifiers</td>
-                  <td>BATAVIA</td>
+                  <td><strong>A2</strong> Pesticide intensity</td>
+                  <td>ADONIS / Solagro IFT (2024)</td>
+                  <td>Treatment-frequency-type indicator (index; municipality level)</td>
+                  <td>Proxy for chemical-input intensity.</td>
+                </tr>
+                <tr>
+                  <td><strong>A3</strong> On-farm energy dependence</td>
+                  <td>Agence ORE and ClimAgri-based proxies</td>
+                  <td>Primary energy use per agricultural area (municipality level)</td>
+                  <td>Proxy for farm energy dependence.</td>
+                </tr>
+
+                <tr class="info-table__group">
+                  <td colspan="4">Climate resilience pillar</td>
+                </tr>
+                <tr>
+                  <td><strong>C1</strong> Water-stress exposure</td>
+                  <td>Meteo-France daily climate series (1996-2024)</td>
+                  <td>Cumulative water deficit (mm; grid then municipality average)</td>
+                  <td>Captures conditions under which shading may relieve water stress.</td>
+                </tr>
+                <tr>
+                  <td><strong>C2</strong> Heat exposure</td>
+                  <td>Meteo-France Tmax (1996-2024)</td>
+                  <td>Excess degree-days (°C-days; grid then municipality average)</td>
+                  <td>Captures exposure to damaging heat conditions.</td>
+                </tr>
+                <tr>
+                  <td><strong>C3</strong> Frost exposure</td>
+                  <td>Meteo-France Tmin (1996-2024)</td>
+                  <td>Frost days / frost intensity (grid then municipality average)</td>
+                  <td>Captures frost-related constraints and possible protection value.</td>
+                </tr>
+
+                <tr class="info-table__group">
+                  <td colspan="4">Rural resilience pillar</td>
+                </tr>
+                <tr>
+                  <td><strong>R1</strong> Employment decline</td>
+                  <td>Agreste agricultural census series</td>
+                  <td>Long-run change in agricultural employment (%; harmonized to municipalities)</td>
+                  <td>Captures structural decline in the agricultural labour base.</td>
+                </tr>
+                <tr>
+                  <td><strong>R2</strong> SAU decline</td>
+                  <td>Agreste SAU series</td>
+                  <td>Long-run change in utilized agricultural area (%; harmonized to municipalities)</td>
+                  <td>Captures contraction of the agricultural land base.</td>
+                </tr>
+                <tr>
+                  <td><strong>R3</strong> PBS decline</td>
+                  <td>Agreste PBS series</td>
+                  <td>Long-run change in standard output (%; harmonized to municipalities)</td>
+                  <td>Captures structural decline in agricultural production capacity.</td>
+                </tr>
+
+                <tr class="info-table__group">
+                  <td colspan="4">Nature conservation pillar</td>
+                </tr>
+                <tr>
+                  <td><strong>N1</strong> Hedgerow density</td>
+                  <td>IGN BD TOPO (HAIE, 2024)</td>
+                  <td>Hedgerow length per agricultural area (m/ha; municipality level)</td>
+                  <td>Proxy for ecological infrastructure and habitat connectivity.</td>
+                </tr>
+                <tr>
+                  <td><strong>N2</strong> Permanent grassland share</td>
+                  <td>RPG (2022)</td>
+                  <td>Share of permanent grassland in agricultural land (ratio or %; municipality level)</td>
+                  <td>Proxy for extensive grass-based systems and ecological value.</td>
+                </tr>
+                <tr>
+                  <td><strong>N3</strong> Forest cover</td>
+                  <td>IGN MASQUE-FORET (2025)</td>
+                  <td>Forest share in municipality area or agricultural context (ratio or %; municipality level)</td>
+                  <td>Proxy for surrounding habitat context and landscape complexity.</td>
+                </tr>
+
+                <tr class="info-table__group">
+                  <td colspan="4">Observed AV projects</td>
+                </tr>
+                <tr>
+                  <td><strong>BATAVIA</strong> project records</td>
+                  <td>BATAVIA inventory (2025)</td>
+                  <td>Project-level geocoded observations matched to municipality identifiers</td>
                   <td>Used for the revealed-preference benchmark and BAU comparison logic.</td>
                 </tr>
               </tbody>
