@@ -183,6 +183,8 @@ let currentPreset = "balanced";
 let currentMapMode = "merit";
 let selectedCommuneInsee = null;
 let fallbackToGeoJSON = null;
+let subpillarAttrsLoaded = false;
+let subpillarAttrsPromise = null;
 const FR_BOUNDS = [
   [-5.8, 41.0],
   [9.8, 51.6],
@@ -653,7 +655,7 @@ function refreshScenarioAndKPIs() {
 
   const selectedRow = selectedCommuneInsee ? attrs.find((r) => r.insee === selectedCommuneInsee) : null;
   setContextPanel(selectedRow || null);
-  if (usingPmtiles && anyInternalMixCustomized() && typeof fallbackToGeoJSON === "function") {
+  if (usingPmtiles && subpillarAttrsLoaded && anyInternalMixCustomized() && typeof fallbackToGeoJSON === "function") {
     fallbackToGeoJSON("custom sub-indicator view requires GeoJSON source");
   }
   renderLegendFromState();
@@ -685,6 +687,24 @@ async function fetchJson(path) {
   const response = await fetch(withVersion(path), { cache: "no-store" });
   if (!response.ok) throw new Error(`Failed to load ${path}: ${response.status}`);
   return response.json();
+}
+
+async function ensureSubpillarAttrsLoaded() {
+  if (subpillarAttrsLoaded) return;
+  if (!subpillarAttrsPromise) {
+    loader.classList.remove("hidden");
+    loader.textContent = "Loading sub-indicator data?";
+    subpillarAttrsPromise = fetchJson("./data/communes_subpillars.json")
+      .then((records) => {
+        const byInsee = new Map(records.map((row) => [String(row.insee), row]));
+        attrs = attrs.map((row) => ({ ...row, ...(byInsee.get(row.insee) || {}) }));
+        subpillarAttrsLoaded = true;
+      })
+      .finally(() => {
+        loader.classList.add("hidden");
+      });
+  }
+  return subpillarAttrsPromise;
 }
 
 function buildMapStyle(pmtilesUrl) {
@@ -922,13 +942,14 @@ weightKeys.forEach((k) => {
 internalPillarKeys.forEach((pillarKey) => {
   const cfg = internalPillarConfigs[pillarKey];
   cfg.keys.forEach((key) => {
-    cfg.sliders[key].addEventListener("input", (ev) => {
+    cfg.sliders[key].addEventListener("input", async (ev) => {
       rebalanceInternalWeights(pillarKey, key, ev.target.value);
       updateLabels();
+      await ensureSubpillarAttrsLoaded();
       refreshDebounced();
     });
   });
-  cfg.toggleEl.addEventListener("click", () => {
+  cfg.toggleEl.addEventListener("click", async () => {
     const isOpen = cfg.toggleEl.getAttribute("aria-expanded") === "true";
     setSubpillarOpen(pillarKey, !isOpen);
   });

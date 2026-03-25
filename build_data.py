@@ -24,6 +24,7 @@ RAW_COMMUNES_GEOJSON = ROOT / "data" / "communes_raw.geojson"
 OUT_DEPS = ROOT / "data" / "departements_pillars.geojson"
 OUT_COMMUNES = ROOT / "data" / "communes_pillars.geojson"
 OUT_COMMUNES_ATTRS = ROOT / "data" / "communes_attrs.json"
+OUT_COMMUNES_SUBATTRS = ROOT / "data" / "communes_subpillars.json"
 OUT_QA_UNMATCHED = ROOT / "data" / "qa_unmatched_insee.csv"
 
 RAW_COMMUNES_URL = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/communes.geojson"
@@ -219,10 +220,22 @@ def build_commune_geojson(commune_scores: pd.DataFrame) -> None:
     merged.to_file(OUT_COMMUNES, driver="GeoJSON")
     print(f"Wrote: {OUT_COMMUNES} ({OUT_COMMUNES.stat().st_size/1e6:.1f} MB)")
 
-    attrs = merged.drop(columns="geometry").copy()
-    attrs = attrs.rename(columns={"nom": "name"})
-    attrs.to_json(OUT_COMMUNES_ATTRS, orient="records", force_ascii=False)
+    attrs = merged.drop(columns="geometry").copy().rename(columns={"nom": "name"})
+
+    sub_cols = [
+        "E1_score", "E2_score", "E3_score",
+        "A1_score", "A2_score", "A3_score",
+        "c1", "c2", "c3",
+        "R1_TF_score", "R2_SAU_score", "R3_PBS_score",
+        "N1_hedges_mm", "N2_pp_mm", "N3_forest_mm",
+    ]
+    base_cols = [c for c in attrs.columns if c not in sub_cols]
+
+    attrs[base_cols].to_json(OUT_COMMUNES_ATTRS, orient="records", force_ascii=False)
     print(f"Wrote: {OUT_COMMUNES_ATTRS} ({OUT_COMMUNES_ATTRS.stat().st_size/1e6:.1f} MB)")
+
+    attrs[["insee", *sub_cols]].to_json(OUT_COMMUNES_SUBATTRS, orient="records", force_ascii=False)
+    print(f"Wrote: {OUT_COMMUNES_SUBATTRS} ({OUT_COMMUNES_SUBATTRS.stat().st_size/1e6:.1f} MB)")
 
 
 def build_department_geojson(commune_scores: pd.DataFrame) -> None:
