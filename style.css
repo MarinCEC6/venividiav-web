@@ -243,6 +243,43 @@ code { color: var(--accent-3); }
   width: 100%;
   accent-color: var(--accent);
 }
+.subpillar-panel {
+  margin-top: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.025);
+  overflow: hidden;
+}
+.subpillar-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 13px;
+  cursor: pointer;
+  list-style: none;
+}
+.subpillar-summary::-webkit-details-marker {
+  display: none;
+}
+.subpillar-summary span {
+  font-weight: 600;
+}
+.subpillar-summary small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.subpillar-body {
+  padding: 0 13px 13px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.subpillar-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
 .toggle-row {
   display: flex;
   align-items: center;

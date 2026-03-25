@@ -38,6 +38,18 @@ const sliderVals = {
   R: document.getElementById("wR_val"),
   N: document.getElementById("wN_val"),
 };
+const energySliders = {
+  E1: document.getElementById("e1w"),
+  E2: document.getElementById("e2w"),
+  E3: document.getElementById("e3w"),
+};
+const energySliderVals = {
+  E1: document.getElementById("e1w_val"),
+  E2: document.getElementById("e2w_val"),
+  E3: document.getElementById("e3w_val"),
+};
+const energyWeightTotalEl = document.getElementById("energyWeightTotal");
+const energyWeightsNormEl = document.getElementById("energyWeightsNorm");
 const applyPhi = document.getElementById("applyPhi");
 const targetHa = document.getElementById("targetHa");
 const targetHaVal = document.getElementById("targetHa_val");
@@ -53,6 +65,7 @@ const kpiArea = document.getElementById("kpiArea");
 const kpiCap = document.getElementById("kpiCap");
 const kpiE = document.getElementById("kpiE");
 const weightKeys = ["E", "A", "C", "R", "N"];
+const energyWeightKeys = ["E1", "E2", "E3"];
 const presetButtons = [...document.querySelectorAll("[data-preset]")];
 
 const PRESETS = {
@@ -74,6 +87,7 @@ let usingPmtiles = true;
 let currentPreset = "balanced";
 let currentMapMode = "merit";
 let selectedCommuneInsee = null;
+let fallbackToGeoJSON = null;
 const FR_BOUNDS = [
   [-5.8, 41.0],
   [9.8, 51.6],
@@ -109,8 +123,22 @@ function getRawWeights() {
   return Object.fromEntries(weightKeys.map((k) => [k, Number(sliders[k].value)]));
 }
 
+function energyMixIsDefault() {
+  const current = energyWeightKeys.map((k) => Number(energySliders[k].value));
+  const baseline = [33.4, 33.3, 33.3];
+  return baseline.every((value, idx) => Math.abs(value - current[idx]) < 1e-6);
+}
+
+function getRawEnergyWeights() {
+  return Object.fromEntries(energyWeightKeys.map((k) => [k, Number(energySliders[k].value)]));
+}
+
 function getWeightStep() {
   return Number(sliders[weightKeys[0]].step || 1);
+}
+
+function getEnergyWeightStep() {
+  return Number(energySliders[energyWeightKeys[0]].step || 1);
 }
 
 function clampWeight(value) {
@@ -128,6 +156,13 @@ function getWeights() {
   const sum = Object.values(raw).reduce((a, b) => a + b, 0);
   if (sum <= 0) return { E: 0.2, A: 0.2, C: 0.2, R: 0.2, N: 0.2 };
   return Object.fromEntries(weightKeys.map((k) => [k, raw[k] / sum]));
+}
+
+function getEnergyWeights() {
+  const raw = getRawEnergyWeights();
+  const sum = Object.values(raw).reduce((a, b) => a + b, 0);
+  if (sum <= 0) return { E1: 1 / 3, E2: 1 / 3, E3: 1 / 3 };
+  return Object.fromEntries(energyWeightKeys.map((k) => [k, raw[k] / sum]));
 }
 
 function setPresetState(name) {
@@ -150,12 +185,18 @@ function detectPresetName() {
 }
 
 function rebalanceWeights(changedKey, changedValue) {
-  const raw = getRawWeights();
-  const step = getWeightStep();
+  rebalanceSliderGroup(weightKeys, sliders, getRawWeights(), getWeightStep(), changedKey, changedValue);
+}
+
+function rebalanceEnergyWeights(changedKey, changedValue) {
+  rebalanceSliderGroup(energyWeightKeys, energySliders, getRawEnergyWeights(), getEnergyWeightStep(), changedKey, changedValue);
+}
+
+function rebalanceSliderGroup(keys, sliderGroup, raw, step, changedKey, changedValue) {
   const v = quantizeWeight(changedValue);
   raw[changedKey] = v;
 
-  const others = weightKeys.filter((k) => k !== changedKey);
+  const others = keys.filter((k) => k !== changedKey);
   const targetOthers = 100 - v;
   const currentOthers = others.map((k) => raw[k]);
   const sumOthers = currentOthers.reduce((a, b) => a + b, 0);
@@ -184,22 +225,27 @@ function rebalanceWeights(changedKey, changedValue) {
     newOthers = flooredUnits.map((units) => Number((units * step).toFixed(6)));
   }
 
-  sliders[changedKey].value = v.toFixed(1);
+  sliderGroup[changedKey].value = v.toFixed(1);
   others.forEach((k, i) => {
-    sliders[k].value = newOthers[i].toFixed(1);
+    sliderGroup[k].value = newOthers[i].toFixed(1);
   });
 }
 
 function updateLabels() {
   for (const k of weightKeys) sliderVals[k].textContent = Number(sliders[k].value).toFixed(1);
+  for (const k of energyWeightKeys) energySliderVals[k].textContent = Number(energySliders[k].value).toFixed(1);
   targetHaVal.textContent = targetHa.value;
   mobilizationPctVal.textContent = Number(mobilizationPct.value).toFixed(1);
   densityVal.textContent = Number(density.value).toFixed(2);
   topPctVal.textContent = topPct.value;
   const total = Object.values(getRawWeights()).reduce((a, b) => a + b, 0);
+  const energyTotal = Object.values(getRawEnergyWeights()).reduce((a, b) => a + b, 0);
   weightTotalEl.textContent = `${total.toFixed(1)}%`;
+  energyWeightTotalEl.textContent = `${energyTotal.toFixed(1)}%`;
   const w = getWeights();
+  const ew = getEnergyWeights();
   weightsNormEl.textContent = `E ${w.E.toFixed(2)} · A ${w.A.toFixed(2)} · C ${w.C.toFixed(2)} · R ${w.R.toFixed(2)} · N ${w.N.toFixed(2)}`;
+  energyWeightsNormEl.textContent = `E1 ${ew.E1.toFixed(2)} · E2 ${ew.E2.toFixed(2)} · E3 ${ew.E3.toFixed(2)}`;
   setPresetState(detectPresetName());
 }
 
@@ -221,6 +267,40 @@ function pillarDefinitions() {
     { key: "C", field: "P_C", label: "Climate resilience" },
     { key: "R", field: "P_R", label: "Rural resilience" },
     { key: "N", field: "P_N", label: "Nature conservation" },
+  ];
+}
+
+function computeEnergyPillar(row) {
+  const e1 = Number(row.E1_score);
+  const e2 = Number(row.E2_score);
+  const e3 = Number(row.E3_score);
+  if (![e1, e2, e3].every(Number.isFinite)) return Number(row.P_E) || 0;
+  const ew = getEnergyWeights();
+  return ew.E1 * e1 + ew.E2 * e2 + ew.E3 * e3;
+}
+
+function getPillarValue(row, pillarKey) {
+  if (pillarKey === "E") return computeEnergyPillar(row);
+  return Number(row[`P_${pillarKey}`]) || 0;
+}
+
+function energyExpr() {
+  const ew = getEnergyWeights();
+  return [
+    "case",
+    [
+      "all",
+      ["has", "E1_score"],
+      ["has", "E2_score"],
+      ["has", "E3_score"],
+    ],
+    [
+      "+",
+      ["*", ew.E1, ["coalesce", ["get", "E1_score"], 0]],
+      ["*", ew.E2, ["coalesce", ["get", "E2_score"], 0]],
+      ["*", ew.E3, ["coalesce", ["get", "E3_score"], 0]],
+    ],
+    ["coalesce", ["get", "P_E"], 0],
   ];
 }
 
@@ -258,10 +338,11 @@ function scenarioMeaning(w, target, area, outputTWh) {
 
 function contributionBreakdown(row, w) {
   return pillarDefinitions().map((p) => {
-    const weighted = row[p.field] * w[p.key];
+    const raw = getPillarValue(row, p.key);
+    const weighted = raw * w[p.key];
     return {
       ...p,
-      raw: row[p.field],
+      raw,
       weighted,
     };
   });
@@ -313,7 +394,12 @@ function setContextPanel(row) {
 }
 
 function computeScore(row, w, withPhi) {
-  let u = w.E * row.P_E + w.A * row.P_A + w.C * row.P_C + w.R * row.P_R + w.N * row.P_N;
+  let u =
+    w.E * getPillarValue(row, "E") +
+    w.A * getPillarValue(row, "A") +
+    w.C * getPillarValue(row, "C") +
+    w.R * getPillarValue(row, "R") +
+    w.N * getPillarValue(row, "N");
   if (withPhi) u *= row.phi;
   return u;
 }
@@ -321,7 +407,7 @@ function computeScore(row, w, withPhi) {
 function scoreExpr(w, withPhi) {
   const linear = [
     "+",
-    ["*", w.E, ["coalesce", ["get", "P_E"], 0]],
+    ["*", w.E, energyExpr()],
     ["*", w.A, ["coalesce", ["get", "P_A"], 0]],
     ["*", w.C, ["coalesce", ["get", "P_C"], 0]],
     ["*", w.R, ["coalesce", ["get", "P_R"], 0]],
@@ -478,6 +564,9 @@ function refreshScenarioAndKPIs() {
 
   const selectedRow = selectedCommuneInsee ? attrs.find((r) => r.insee === selectedCommuneInsee) : null;
   setContextPanel(selectedRow || null);
+  if (usingPmtiles && !energyMixIsDefault() && typeof fallbackToGeoJSON === "function") {
+    fallbackToGeoJSON("energy sub-indicator view requires GeoJSON source");
+  }
   renderLegendFromState();
   refreshMapStyling();
 }
@@ -561,6 +650,9 @@ async function init() {
     name: r.name || r.commune_name || r.insee,
     dep: String(r.dep),
     P_E: Number(r.P_E),
+    E1_score: Number(r.E1_score),
+    E2_score: Number(r.E2_score),
+    E3_score: Number(r.E3_score),
     P_A: Number(r.P_A),
     P_C: Number(r.P_C),
     P_R: Number(r.P_R),
@@ -592,7 +684,7 @@ async function init() {
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
   let fallbackTriggered = false;
-  async function fallbackToGeoJSON(reason) {
+  fallbackToGeoJSON = async function (reason) {
     if (fallbackTriggered) return;
     fallbackTriggered = true;
     usingPmtiles = false;
@@ -630,7 +722,7 @@ async function init() {
       loader.textContent = "Map layers could not be loaded.";
       mapStatus.textContent = "Load error";
     }
-  }
+  };
 
   map.on("error", (ev) => {
     const msg = String(ev?.error?.message || "");
@@ -675,6 +767,9 @@ async function init() {
       insee: String(p.insee || p.INSEE_COM || ""),
       name: p.name || p.nom || p.insee,
       P_E: Number(p.P_E),
+      E1_score: Number(p.E1_score),
+      E2_score: Number(p.E2_score),
+      E3_score: Number(p.E3_score),
       P_A: Number(p.P_A),
       P_C: Number(p.P_C),
       P_R: Number(p.P_R),
@@ -707,6 +802,13 @@ weightKeys.forEach((k) => {
   sliders[k].addEventListener("input", (ev) => {
     rebalanceWeights(k, ev.target.value);
     setPresetState("custom");
+    updateLabels();
+    refreshDebounced();
+  });
+});
+energyWeightKeys.forEach((k) => {
+  energySliders[k].addEventListener("input", (ev) => {
+    rebalanceEnergyWeights(k, ev.target.value);
     updateLabels();
     refreshDebounced();
   });

@@ -52,6 +52,13 @@ def geom_to_tile_space(geom, left, bottom, right, top):
     return transform(f, geom)
 
 
+def finite_num(v, field: str, insee: str) -> float:
+    x = float(v)
+    if not (x == x) or x in (float("inf"), float("-inf")):
+        raise ValueError(f"Non-finite value for {field} at INSEE={insee}: {v}")
+    return x
+
+
 def init_mbtiles(path: Path) -> sqlite3.Connection:
     if path.exists():
         path.unlink()
@@ -100,18 +107,22 @@ def main():
                 tg = geom_to_tile_space(cg, b.left, b.bottom, b.right, b.top)
                 if tg.is_empty:
                     continue
+                insee = str(r.get("insee", ""))
                 props = {
-                    "insee": str(r.get("insee", "")),
+                    "insee": insee,
                     "name": r.get("nom") if r.get("nom") is not None else r.get("commune_name", ""),
                     "dep": str(r.get("dep", "")),
-                    "P_E": float(r.get("P_E", 0.0) or 0.0),
-                    "P_A": float(r.get("P_A", 0.0) or 0.0),
-                    "P_C": float(r.get("P_C", 0.0) or 0.0),
-                    "P_R": float(r.get("P_R", 0.0) or 0.0),
-                    "P_N": float(r.get("P_N", 0.0) or 0.0),
-                    "phi": float(r.get("phi", 0.0) or 0.0),
-                    "ELIG_HA": float(r.get("ELIG_HA", 0.0) or 0.0),
-                    "pvout": float(r.get("pvout", 0.0) or 0.0),
+                    "P_E": finite_num(r.get("P_E"), "P_E", insee),
+                    "E1_score": finite_num(r.get("E1_score"), "E1_score", insee),
+                    "E2_score": finite_num(r.get("E2_score"), "E2_score", insee),
+                    "E3_score": finite_num(r.get("E3_score"), "E3_score", insee),
+                    "P_A": finite_num(r.get("P_A"), "P_A", insee),
+                    "P_C": finite_num(r.get("P_C"), "P_C", insee),
+                    "P_R": finite_num(r.get("P_R"), "P_R", insee),
+                    "P_N": finite_num(r.get("P_N"), "P_N", insee),
+                    "phi": finite_num(r.get("phi"), "phi", insee),
+                    "ELIG_HA": finite_num(r.get("ELIG_HA"), "ELIG_HA", insee),
+                    "pvout": finite_num(r.get("pvout"), "pvout", insee),
                 }
                 features.append({"geometry": mapping(tg), "properties": props})
 
@@ -155,6 +166,9 @@ def main():
                             "name": "String",
                             "dep": "String",
                             "P_E": "Number",
+                            "E1_score": "Number",
+                            "E2_score": "Number",
+                            "E3_score": "Number",
                             "P_A": "Number",
                             "P_C": "Number",
                             "P_R": "Number",
