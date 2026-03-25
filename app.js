@@ -969,8 +969,21 @@ mapModeButtons.forEach((button) => {
 contextClose.addEventListener("click", () => setContextPanel(null));
 
 internalPillarKeys.forEach((pillarKey) => setSubpillarOpen(pillarKey, false));
+window.addEventListener("error", (event) => {
+  const message = event?.error?.stack || event?.message || "Unknown browser error";
+  console.error("window.onerror", event?.error || event);
+  loader.textContent = `Init error: ${message}`;
+  mapStatus.textContent = "Initialization error";
+});
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event?.reason?.stack || event?.reason?.message || String(event?.reason || "Unknown rejection");
+  console.error("unhandledrejection", event?.reason || event);
+  loader.textContent = `Init error: ${reason}`;
+  mapStatus.textContent = "Initialization error";
+});
+
 init().catch((error) => {
   console.error(error);
-  loader.textContent = "The application failed to initialize.";
+  loader.textContent = `The application failed to initialize: ${error?.stack || error?.message || String(error)}`;
   mapStatus.textContent = "Initialization error";
 });
