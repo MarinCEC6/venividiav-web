@@ -20,7 +20,7 @@ OUT_PMTILES = ROOT / "data" / "communes.pmtiles"
 LAYER_NAME = "communes"
 EXTENT = 4096
 ZMIN = 0
-ZMAX = 11
+ZMAX = 10
 
 
 def clean_geom(g):

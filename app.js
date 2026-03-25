@@ -655,9 +655,6 @@ function refreshScenarioAndKPIs() {
 
   const selectedRow = selectedCommuneInsee ? attrs.find((r) => r.insee === selectedCommuneInsee) : null;
   setContextPanel(selectedRow || null);
-  if (usingPmtiles && subpillarAttrsLoaded && anyInternalMixCustomized() && typeof fallbackToGeoJSON === "function") {
-    fallbackToGeoJSON("custom sub-indicator view requires GeoJSON source");
-  }
   renderLegendFromState();
   refreshMapStyling();
 }
