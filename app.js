@@ -783,6 +783,9 @@ async function init() {
   const pv = attrs.map((r) => r.pvout).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
   if (pv.length) globalPvoutMedian = pv[Math.floor(pv.length / 2)];
 
+  updateLabels();
+  refreshScenarioAndKPIs();
+
   const protocol = new pmtiles.Protocol();
   maplibregl.addProtocol("pmtiles", protocol.tile);
   const pmtilesUrl = withVersion("./data/communes.pmtiles");
