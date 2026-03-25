@@ -38,20 +38,113 @@ const sliderVals = {
   R: document.getElementById("wR_val"),
   N: document.getElementById("wN_val"),
 };
-const energySliders = {
-  E1: document.getElementById("e1w"),
-  E2: document.getElementById("e2w"),
-  E3: document.getElementById("e3w"),
+const internalPillarConfigs = {
+  E: {
+    label: "Energy",
+    topField: "P_E",
+    keys: ["E1", "E2", "E3"],
+    fields: { E1: "E1_score", E2: "E2_score", E3: "E3_score" },
+    sliders: {
+      E1: document.getElementById("e1w"),
+      E2: document.getElementById("e2w"),
+      E3: document.getElementById("e3w"),
+    },
+    sliderVals: {
+      E1: document.getElementById("e1w_val"),
+      E2: document.getElementById("e2w_val"),
+      E3: document.getElementById("e3w_val"),
+    },
+    totalEl: document.getElementById("energyWeightTotal"),
+    normEl: document.getElementById("energyWeightsNorm"),
+    toggleEl: document.getElementById("energySubpillarToggle"),
+    bodyEl: document.getElementById("energySubpillarBody"),
+    defaultValues: { E1: 33.4, E2: 33.3, E3: 33.3 },
+  },
+  A: {
+    label: "Agricultural intensity",
+    topField: "P_A",
+    keys: ["A1", "A2", "A3"],
+    fields: { A1: "A1_score", A2: "A2_score", A3: "A3_score" },
+    sliders: {
+      A1: document.getElementById("a1w"),
+      A2: document.getElementById("a2w"),
+      A3: document.getElementById("a3w"),
+    },
+    sliderVals: {
+      A1: document.getElementById("a1w_val"),
+      A2: document.getElementById("a2w_val"),
+      A3: document.getElementById("a3w_val"),
+    },
+    totalEl: document.getElementById("agriWeightTotal"),
+    normEl: document.getElementById("agriWeightsNorm"),
+    toggleEl: document.getElementById("agriSubpillarToggle"),
+    bodyEl: document.getElementById("agriSubpillarBody"),
+    defaultValues: { A1: 33.4, A2: 33.3, A3: 33.3 },
+  },
+  C: {
+    label: "Climate resilience",
+    topField: "P_C",
+    keys: ["C1", "C2", "C3"],
+    fields: { C1: "c1", C2: "c2", C3: "c3" },
+    sliders: {
+      C1: document.getElementById("c1w"),
+      C2: document.getElementById("c2w"),
+      C3: document.getElementById("c3w"),
+    },
+    sliderVals: {
+      C1: document.getElementById("c1w_val"),
+      C2: document.getElementById("c2w_val"),
+      C3: document.getElementById("c3w_val"),
+    },
+    totalEl: document.getElementById("climateWeightTotal"),
+    normEl: document.getElementById("climateWeightsNorm"),
+    toggleEl: document.getElementById("climateSubpillarToggle"),
+    bodyEl: document.getElementById("climateSubpillarBody"),
+    defaultValues: { C1: 33.4, C2: 33.3, C3: 33.3 },
+  },
+  R: {
+    label: "Rural resilience",
+    topField: "P_R",
+    keys: ["R1", "R2", "R3"],
+    fields: { R1: "R1_TF_score", R2: "R2_SAU_score", R3: "R3_PBS_score" },
+    sliders: {
+      R1: document.getElementById("r1w"),
+      R2: document.getElementById("r2w"),
+      R3: document.getElementById("r3w"),
+    },
+    sliderVals: {
+      R1: document.getElementById("r1w_val"),
+      R2: document.getElementById("r2w_val"),
+      R3: document.getElementById("r3w_val"),
+    },
+    totalEl: document.getElementById("ruralWeightTotal"),
+    normEl: document.getElementById("ruralWeightsNorm"),
+    toggleEl: document.getElementById("ruralSubpillarToggle"),
+    bodyEl: document.getElementById("ruralSubpillarBody"),
+    defaultValues: { R1: 33.4, R2: 33.3, R3: 33.3 },
+  },
+  N: {
+    label: "Nature conservation",
+    topField: "P_N",
+    keys: ["N1", "N2", "N3"],
+    fields: { N1: "N1_hedges_mm", N2: "N2_pp_mm", N3: "N3_forest_mm" },
+    sliders: {
+      N1: document.getElementById("n1w"),
+      N2: document.getElementById("n2w"),
+      N3: document.getElementById("n3w"),
+    },
+    sliderVals: {
+      N1: document.getElementById("n1w_val"),
+      N2: document.getElementById("n2w_val"),
+      N3: document.getElementById("n3w_val"),
+    },
+    totalEl: document.getElementById("natureWeightTotal"),
+    normEl: document.getElementById("natureWeightsNorm"),
+    toggleEl: document.getElementById("natureSubpillarToggle"),
+    bodyEl: document.getElementById("natureSubpillarBody"),
+    defaultValues: { N1: 33.4, N2: 33.3, N3: 33.3 },
+  },
 };
-const energySliderVals = {
-  E1: document.getElementById("e1w_val"),
-  E2: document.getElementById("e2w_val"),
-  E3: document.getElementById("e3w_val"),
-};
-const energyWeightTotalEl = document.getElementById("energyWeightTotal");
-const energyWeightsNormEl = document.getElementById("energyWeightsNorm");
-const energySubpillarToggle = document.getElementById("energySubpillarToggle");
-const energySubpillarBody = document.getElementById("energySubpillarBody");
 const applyPhi = document.getElementById("applyPhi");
 const targetHa = document.getElementById("targetHa");
 const targetHaVal = document.getElementById("targetHa_val");
@@ -67,8 +160,8 @@ const kpiArea = document.getElementById("kpiArea");
 const kpiCap = document.getElementById("kpiCap");
 const kpiE = document.getElementById("kpiE");
 const weightKeys = ["E", "A", "C", "R", "N"];
-const energyWeightKeys = ["E1", "E2", "E3"];
 const presetButtons = [...document.querySelectorAll("[data-preset]")];
+const internalPillarKeys = Object.keys(internalPillarConfigs);
 
 const PRESETS = {
   balanced: { label: "Balanced", values: [20, 20, 20, 20, 20] },
@@ -125,22 +218,27 @@ function getRawWeights() {
   return Object.fromEntries(weightKeys.map((k) => [k, Number(sliders[k].value)]));
 }
 
-function energyMixIsDefault() {
-  const current = energyWeightKeys.map((k) => Number(energySliders[k].value));
-  const baseline = [33.4, 33.3, 33.3];
-  return baseline.every((value, idx) => Math.abs(value - current[idx]) < 1e-6);
+function getRawInternalWeights(pillarKey) {
+  const cfg = internalPillarConfigs[pillarKey];
+  return Object.fromEntries(cfg.keys.map((k) => [k, Number(cfg.sliders[k].value)]));
 }
 
-function getRawEnergyWeights() {
-  return Object.fromEntries(energyWeightKeys.map((k) => [k, Number(energySliders[k].value)]));
+function internalMixIsDefault(pillarKey) {
+  const cfg = internalPillarConfigs[pillarKey];
+  return cfg.keys.every((k) => Math.abs(Number(cfg.sliders[k].value) - Number(cfg.defaultValues[k])) < 1e-6);
+}
+
+function anyInternalMixCustomized() {
+  return internalPillarKeys.some((pillarKey) => !internalMixIsDefault(pillarKey));
 }
 
 function getWeightStep() {
   return Number(sliders[weightKeys[0]].step || 1);
 }
 
-function getEnergyWeightStep() {
-  return Number(energySliders[energyWeightKeys[0]].step || 1);
+function getInternalWeightStep(pillarKey) {
+  const cfg = internalPillarConfigs[pillarKey];
+  return Number(cfg.sliders[cfg.keys[0]].step || 1);
 }
 
 function clampWeight(value) {
@@ -160,11 +258,12 @@ function getWeights() {
   return Object.fromEntries(weightKeys.map((k) => [k, raw[k] / sum]));
 }
 
-function getEnergyWeights() {
-  const raw = getRawEnergyWeights();
+function getInternalWeights(pillarKey) {
+  const cfg = internalPillarConfigs[pillarKey];
+  const raw = getRawInternalWeights(pillarKey);
   const sum = Object.values(raw).reduce((a, b) => a + b, 0);
-  if (sum <= 0) return { E1: 1 / 3, E2: 1 / 3, E3: 1 / 3 };
-  return Object.fromEntries(energyWeightKeys.map((k) => [k, raw[k] / sum]));
+  if (sum <= 0) return Object.fromEntries(cfg.keys.map((k) => [k, 1 / cfg.keys.length]));
+  return Object.fromEntries(cfg.keys.map((k) => [k, raw[k] / sum]));
 }
 
 function setPresetState(name) {
@@ -190,8 +289,9 @@ function rebalanceWeights(changedKey, changedValue) {
   rebalanceSliderGroup(weightKeys, sliders, getRawWeights(), getWeightStep(), changedKey, changedValue);
 }
 
-function rebalanceEnergyWeights(changedKey, changedValue) {
-  rebalanceSliderGroup(energyWeightKeys, energySliders, getRawEnergyWeights(), getEnergyWeightStep(), changedKey, changedValue);
+function rebalanceInternalWeights(pillarKey, changedKey, changedValue) {
+  const cfg = internalPillarConfigs[pillarKey];
+  rebalanceSliderGroup(cfg.keys, cfg.sliders, getRawInternalWeights(pillarKey), getInternalWeightStep(pillarKey), changedKey, changedValue);
 }
 
 function rebalanceSliderGroup(keys, sliderGroup, raw, step, changedKey, changedValue) {
@@ -235,19 +335,22 @@ function rebalanceSliderGroup(keys, sliderGroup, raw, step, changedKey, changedV
 
 function updateLabels() {
   for (const k of weightKeys) sliderVals[k].textContent = Number(sliders[k].value).toFixed(1);
-  for (const k of energyWeightKeys) energySliderVals[k].textContent = Number(energySliders[k].value).toFixed(1);
+  for (const pillarKey of internalPillarKeys) {
+    const cfg = internalPillarConfigs[pillarKey];
+    for (const key of cfg.keys) cfg.sliderVals[key].textContent = Number(cfg.sliders[key].value).toFixed(1);
+    const total = Object.values(getRawInternalWeights(pillarKey)).reduce((a, b) => a + b, 0);
+    cfg.totalEl.textContent = `${total.toFixed(1)}%`;
+    const weights = getInternalWeights(pillarKey);
+    cfg.normEl.textContent = cfg.keys.map((key) => `${key} ${weights[key].toFixed(2)}`).join(" | ");
+  }
   targetHaVal.textContent = targetHa.value;
   mobilizationPctVal.textContent = Number(mobilizationPct.value).toFixed(1);
   densityVal.textContent = Number(density.value).toFixed(2);
   topPctVal.textContent = topPct.value;
   const total = Object.values(getRawWeights()).reduce((a, b) => a + b, 0);
-  const energyTotal = Object.values(getRawEnergyWeights()).reduce((a, b) => a + b, 0);
   weightTotalEl.textContent = `${total.toFixed(1)}%`;
-  energyWeightTotalEl.textContent = `${energyTotal.toFixed(1)}%`;
   const w = getWeights();
-  const ew = getEnergyWeights();
-  weightsNormEl.textContent = `E ${w.E.toFixed(2)} · A ${w.A.toFixed(2)} · C ${w.C.toFixed(2)} · R ${w.R.toFixed(2)} · N ${w.N.toFixed(2)}`;
-  energyWeightsNormEl.textContent = `E1 ${ew.E1.toFixed(2)} · E2 ${ew.E2.toFixed(2)} · E3 ${ew.E3.toFixed(2)}`;
+  weightsNormEl.textContent = `E ${w.E.toFixed(2)} | A ${w.A.toFixed(2)} | C ${w.C.toFixed(2)} | R ${w.R.toFixed(2)} | N ${w.N.toFixed(2)}`;
   setPresetState(detectPresetName());
 }
 
@@ -262,53 +365,32 @@ function setMapMode(mode) {
   }
 }
 
-function setEnergySubpillarOpen(open) {
-  energySubpillarBody.classList.toggle("hidden", !open);
-  energySubpillarToggle.setAttribute("aria-expanded", open ? "true" : "false");
+function setSubpillarOpen(pillarKey, open) {
+  const cfg = internalPillarConfigs[pillarKey];
+  cfg.bodyEl.classList.toggle("hidden", !open);
+  cfg.toggleEl.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
-function pillarDefinitions() {
-  return [
-    { key: "E", field: "P_E", label: "Energy" },
-    { key: "A", field: "P_A", label: "Agricultural intensity" },
-    { key: "C", field: "P_C", label: "Climate resilience" },
-    { key: "R", field: "P_R", label: "Rural resilience" },
-    { key: "N", field: "P_N", label: "Nature conservation" },
-  ];
-}
-
-function computeEnergyPillar(row) {
-  const e1 = Number(row.E1_score);
-  const e2 = Number(row.E2_score);
-  const e3 = Number(row.E3_score);
-  if (![e1, e2, e3].every(Number.isFinite)) return Number(row.P_E) || 0;
-  const ew = getEnergyWeights();
-  return ew.E1 * e1 + ew.E2 * e2 + ew.E3 * e3;
+function computeInternalPillar(row, pillarKey) {
+  const cfg = internalPillarConfigs[pillarKey];
+  const weights = getInternalWeights(pillarKey);
+  const values = cfg.keys.map((key) => Number(row[cfg.fields[key]]));
+  if (!values.every(Number.isFinite)) return Number(row[cfg.topField]) || 0;
+  return cfg.keys.reduce((sum, key) => sum + weights[key] * Number(row[cfg.fields[key]]), 0);
 }
 
 function getPillarValue(row, pillarKey) {
-  if (pillarKey === "E") return computeEnergyPillar(row);
+  if (internalPillarConfigs[pillarKey]) return computeInternalPillar(row, pillarKey);
   return Number(row[`P_${pillarKey}`]) || 0;
 }
 
-function energyExpr() {
-  const ew = getEnergyWeights();
-  return [
-    "case",
-    [
-      "all",
-      ["has", "E1_score"],
-      ["has", "E2_score"],
-      ["has", "E3_score"],
-    ],
-    [
-      "+",
-      ["*", ew.E1, ["coalesce", ["get", "E1_score"], 0]],
-      ["*", ew.E2, ["coalesce", ["get", "E2_score"], 0]],
-      ["*", ew.E3, ["coalesce", ["get", "E3_score"], 0]],
-    ],
-    ["coalesce", ["get", "P_E"], 0],
-  ];
+function pillarExpr(pillarKey) {
+  const cfg = internalPillarConfigs[pillarKey];
+  if (!cfg) return ["coalesce", ["get", `P_${pillarKey}`], 0];
+  const weights = getInternalWeights(pillarKey);
+  const hasAll = ["all", ...cfg.keys.map((key) => ["has", cfg.fields[key]])];
+  const weightedTerms = ["+", ...cfg.keys.map((key) => ["*", weights[key], ["coalesce", ["get", cfg.fields[key]], 0]])];
+  return ["case", hasAll, weightedTerms, ["coalesce", ["get", cfg.topField], 0]];
 }
 
 function scenarioMeaning(w, target, area, outputTWh) {
@@ -414,11 +496,11 @@ function computeScore(row, w, withPhi) {
 function scoreExpr(w, withPhi) {
   const linear = [
     "+",
-    ["*", w.E, energyExpr()],
-    ["*", w.A, ["coalesce", ["get", "P_A"], 0]],
-    ["*", w.C, ["coalesce", ["get", "P_C"], 0]],
-    ["*", w.R, ["coalesce", ["get", "P_R"], 0]],
-    ["*", w.N, ["coalesce", ["get", "P_N"], 0]],
+    ["*", w.E, pillarExpr("E")],
+    ["*", w.A, pillarExpr("A")],
+    ["*", w.C, pillarExpr("C")],
+    ["*", w.R, pillarExpr("R")],
+    ["*", w.N, pillarExpr("N")],
   ];
   return withPhi ? ["*", linear, ["coalesce", ["get", "phi"], 0]] : linear;
 }
@@ -562,7 +644,7 @@ function refreshScenarioAndKPIs() {
     .map(
       (r, i) => `<tr>
         <td>${i + 1}</td>
-        <td>${r.name}${r._selected ? " <span style='color:#a5f04b'>●</span>" : ""}</td>
+        <td>${r.name}${r._selected ? " <span style='color:#a5f04b'>&#9679;</span>" : ""}</td>
         <td>${r._score.toFixed(3)}</td>
         <td>${fmtNum(r.ELIG_HA || 0, 0)}</td>
       </tr>`
@@ -571,8 +653,8 @@ function refreshScenarioAndKPIs() {
 
   const selectedRow = selectedCommuneInsee ? attrs.find((r) => r.insee === selectedCommuneInsee) : null;
   setContextPanel(selectedRow || null);
-  if (usingPmtiles && !energyMixIsDefault() && typeof fallbackToGeoJSON === "function") {
-    fallbackToGeoJSON("energy sub-indicator view requires GeoJSON source");
+  if (usingPmtiles && anyInternalMixCustomized() && typeof fallbackToGeoJSON === "function") {
+    fallbackToGeoJSON("custom sub-indicator view requires GeoJSON source");
   }
   renderLegendFromState();
   refreshMapStyling();
@@ -661,9 +743,21 @@ async function init() {
     E2_score: Number(r.E2_score),
     E3_score: Number(r.E3_score),
     P_A: Number(r.P_A),
+    A1_score: Number(r.A1_score),
+    A2_score: Number(r.A2_score),
+    A3_score: Number(r.A3_score),
     P_C: Number(r.P_C),
+    c1: Number(r.c1),
+    c2: Number(r.c2),
+    c3: Number(r.c3),
     P_R: Number(r.P_R),
+    R1_TF_score: Number(r.R1_TF_score),
+    R2_SAU_score: Number(r.R2_SAU_score),
+    R3_PBS_score: Number(r.R3_PBS_score),
     P_N: Number(r.P_N),
+    N1_hedges_mm: Number(r.N1_hedges_mm),
+    N2_pp_mm: Number(r.N2_pp_mm),
+    N3_forest_mm: Number(r.N3_forest_mm),
     phi: Number(r.phi),
     ELIG_HA: Number(r.ELIG_HA || 0),
     pvout: Number(r.pvout),
@@ -778,9 +872,21 @@ async function init() {
       E2_score: Number(p.E2_score),
       E3_score: Number(p.E3_score),
       P_A: Number(p.P_A),
+      A1_score: Number(p.A1_score),
+      A2_score: Number(p.A2_score),
+      A3_score: Number(p.A3_score),
       P_C: Number(p.P_C),
+      c1: Number(p.c1),
+      c2: Number(p.c2),
+      c3: Number(p.c3),
       P_R: Number(p.P_R),
+      R1_TF_score: Number(p.R1_TF_score),
+      R2_SAU_score: Number(p.R2_SAU_score),
+      R3_PBS_score: Number(p.R3_PBS_score),
       P_N: Number(p.P_N),
+      N1_hedges_mm: Number(p.N1_hedges_mm),
+      N2_pp_mm: Number(p.N2_pp_mm),
+      N3_forest_mm: Number(p.N3_forest_mm),
       phi: Number(p.phi),
       ELIG_HA: Number(p.ELIG_HA || 0),
       pvout: Number(p.pvout || globalPvoutMedian),
@@ -813,11 +919,18 @@ weightKeys.forEach((k) => {
     refreshDebounced();
   });
 });
-energyWeightKeys.forEach((k) => {
-  energySliders[k].addEventListener("input", (ev) => {
-    rebalanceEnergyWeights(k, ev.target.value);
-    updateLabels();
-    refreshDebounced();
+internalPillarKeys.forEach((pillarKey) => {
+  const cfg = internalPillarConfigs[pillarKey];
+  cfg.keys.forEach((key) => {
+    cfg.sliders[key].addEventListener("input", (ev) => {
+      rebalanceInternalWeights(pillarKey, key, ev.target.value);
+      updateLabels();
+      refreshDebounced();
+    });
+  });
+  cfg.toggleEl.addEventListener("click", () => {
+    const isOpen = cfg.toggleEl.getAttribute("aria-expanded") === "true";
+    setSubpillarOpen(pillarKey, !isOpen);
   });
 });
 for (const el of [applyPhi, targetHa, mobilizationPct, density, topPct]) {
@@ -832,13 +945,9 @@ presetButtons.forEach((button) => {
 mapModeButtons.forEach((button) => {
   button.addEventListener("click", () => setMapMode(button.dataset.mapMode));
 });
-energySubpillarToggle.addEventListener("click", () => {
-  const isOpen = energySubpillarToggle.getAttribute("aria-expanded") === "true";
-  setEnergySubpillarOpen(!isOpen);
-});
 contextClose.addEventListener("click", () => setContextPanel(null));
 
-setEnergySubpillarOpen(false);
+internalPillarKeys.forEach((pillarKey) => setSubpillarOpen(pillarKey, false));
 init().catch((error) => {
   console.error(error);
   loader.textContent = "The application failed to initialize.";

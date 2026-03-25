@@ -13,7 +13,11 @@ ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = ROOT.parent
 
 MASTER_SCENARIOS = Path(r"C:/data/RESULTS_AV/02_TABLES/policy_scenarios_custom_full/MASTER_used_for_custom_scenarios_full.csv")
-ENERGY_COMPONENTS = Path(r"C:/Users/mguinard/Documents/Thèse 1A/Cartographie R/E_global_communes_equal_METROPOLE.csv")
+ENERGY_COMPONENTS = next(Path(r"C:/Users/mguinard/Documents").glob("**/E_global_communes_equal_METROPOLE.csv"))
+AGRI_COMPONENTS = Path(r"C:/data/Pillar_A_commune.csv")
+CLIMATE_COMPONENTS = Path(r"C:/data/C_pillar_commune.csv")
+RURAL_COMPONENTS = Path(r"C:/data/R_econ_commune.csv")
+NATURE_COMPONENTS = Path(r"C:/data/naturalness_pillar_communes.csv")
 DEPS_GEOJSON = PROJECT_ROOT / "departements.geojson"
 
 RAW_COMMUNES_GEOJSON = ROOT / "data" / "communes_raw.geojson"
@@ -23,6 +27,44 @@ OUT_COMMUNES_ATTRS = ROOT / "data" / "communes_attrs.json"
 OUT_QA_UNMATCHED = ROOT / "data" / "qa_unmatched_insee.csv"
 
 RAW_COMMUNES_URL = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/communes.geojson"
+
+SUBINDICATOR_SPECS = {
+    "energy": {
+        "path": ENERGY_COMPONENTS,
+        "id_col": "INSEE_COM",
+        "cols": ["E1_score", "E2_score", "E3_score", "E_mean"],
+        "required": ["E1_score", "E2_score", "E3_score"],
+        "fallback": "P_E",
+    },
+    "agri": {
+        "path": AGRI_COMPONENTS,
+        "id_col": "INSEE5",
+        "cols": ["A1_score", "A2_score", "A3_score", "A_score"],
+        "required": ["A1_score", "A2_score", "A3_score"],
+        "fallback": "P_A",
+    },
+    "climate": {
+        "path": CLIMATE_COMPONENTS,
+        "id_col": "INSEE5",
+        "cols": ["c1", "c2", "c3", "C_score"],
+        "required": ["c1", "c2", "c3"],
+        "fallback": "P_C",
+    },
+    "rural": {
+        "path": RURAL_COMPONENTS,
+        "id_col": "INSEE5",
+        "cols": ["R1_TF_score", "R2_SAU_score", "R3_PBS_score", "R_econ_score"],
+        "required": ["R1_TF_score", "R2_SAU_score", "R3_PBS_score"],
+        "fallback": "P_R",
+    },
+    "nature": {
+        "path": NATURE_COMPONENTS,
+        "id_col": "INSEE5",
+        "cols": ["N1_hedges_mm", "N2_pp_mm", "N3_forest_mm", "P_N_pos"],
+        "required": ["N1_hedges_mm", "N2_pp_mm", "N3_forest_mm"],
+        "fallback": "P_N",
+    },
+}
 
 
 def wavg(s: pd.Series, w: pd.Series) -> float:
@@ -49,6 +91,29 @@ def normalize_dep(dep: pd.Series) -> pd.Series:
     is_numeric = dep.str.fullmatch(r"\d+")
     dep.loc[is_numeric] = dep.loc[is_numeric].str.zfill(2)
     return dep
+
+
+def load_component_table(name: str, spec: dict) -> pd.DataFrame:
+    path = spec["path"]
+    if not path.exists():
+        raise FileNotFoundError(f"Missing {name}-component table: {path}")
+
+    df = pd.read_csv(path, dtype={spec["id_col"]: str}).copy()
+    required = {spec["id_col"], *spec["cols"]}
+    missing = sorted(required - set(df.columns))
+    if missing:
+        raise ValueError(f"Missing columns in {path.name}: {missing}")
+
+    df["insee"] = df[spec["id_col"]].astype(str).str.strip().str.upper().str.zfill(5)
+    keep = ["insee", *spec["cols"]]
+    df = df[keep].copy()
+    for c in spec["cols"]:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    if df["insee"].duplicated().any():
+        df = df.sort_values(["insee"]).drop_duplicates("insee", keep="first")
+
+    return df
 
 
 def load_commune_scores() -> pd.DataFrame:
@@ -80,34 +145,23 @@ def load_commune_scores() -> pd.DataFrame:
             f"Sample: {sample}"
         )
 
-    # Keep one row per commune if duplicates exist
     if df["insee"].duplicated().any():
         df = df.sort_values(["insee"]).drop_duplicates("insee", keep="first")
 
-    if not ENERGY_COMPONENTS.exists():
-        raise FileNotFoundError(f"Missing energy-component table: {ENERGY_COMPONENTS}")
-
-    energy = pd.read_csv(ENERGY_COMPONENTS, dtype={"INSEE_COM": str}).copy()
-    required_energy = {"INSEE_COM", "E1_score", "E2_score", "E3_score", "E_mean"}
-    missing_energy = sorted(required_energy - set(energy.columns))
-    if missing_energy:
-        raise ValueError(f"Missing columns in {ENERGY_COMPONENTS.name}: {missing_energy}")
-
-    energy["insee"] = energy["INSEE_COM"].astype(str).str.strip().str.upper().str.zfill(5)
-    keep_energy = ["insee", "E1_score", "E2_score", "E3_score", "E_mean"]
-    energy = energy[keep_energy].copy()
-    for c in ["E1_score", "E2_score", "E3_score", "E_mean"]:
-        energy[c] = pd.to_numeric(energy[c], errors="coerce")
-
-    df = df.merge(energy, on="insee", how="left", validate="one_to_one")
-
-    bad_energy = df[["E1_score", "E2_score", "E3_score"]].isna().any(axis=1)
-    if bad_energy.any():
-        sample = df.loc[bad_energy, ["insee", "dep"]].head(10).to_dict(orient="records")
-        raise ValueError(
-            f"Found {int(bad_energy.sum())} rows with missing energy sub-indicators after merge. "
-            f"Sample: {sample}"
-        )
+    for name, spec in SUBINDICATOR_SPECS.items():
+        comp = load_component_table(name, spec)
+        df = df.merge(comp, on="insee", how="left", validate="one_to_one")
+        fallback = spec.get("fallback")
+        if fallback:
+            for col in spec["required"]:
+                df[col] = df[col].fillna(df[fallback])
+        bad = df[spec["required"]].isna().any(axis=1)
+        if bad.any():
+            sample = df.loc[bad, ["insee", "dep"]].head(10).to_dict(orient="records")
+            raise ValueError(
+                f"Found {int(bad.sum())} rows with missing {name} sub-indicators after merge. "
+                f"Sample: {sample}"
+            )
 
     return df
 
@@ -117,7 +171,6 @@ def build_commune_geojson(commune_scores: pd.DataFrame) -> None:
     gdf = gpd.read_file(RAW_COMMUNES_GEOJSON)
     gdf["insee"] = gdf["code"].astype(str).str.strip().str.upper().str.zfill(5)
 
-    # Keep only communes in the score table
     merged = gdf.merge(commune_scores, on="insee", how="inner")
 
     all_codes = set(commune_scores["insee"])
@@ -126,7 +179,6 @@ def build_commune_geojson(commune_scores: pd.DataFrame) -> None:
     pd.DataFrame({"insee": lost_codes}).to_csv(OUT_QA_UNMATCHED, index=False)
     print(f"Wrote: {OUT_QA_UNMATCHED} (unmatched INSEE: {len(lost_codes)})")
 
-    # Mild simplification for browser performance
     merged = merged.to_crs(2154)
     merged["geometry"] = merged.geometry.simplify(80, preserve_topology=True)
     merged = merged.to_crs(4326)
@@ -143,9 +195,21 @@ def build_commune_geojson(commune_scores: pd.DataFrame) -> None:
         "E2_score",
         "E3_score",
         "P_A",
+        "A1_score",
+        "A2_score",
+        "A3_score",
         "P_C",
+        "c1",
+        "c2",
+        "c3",
         "P_R",
+        "R1_TF_score",
+        "R2_SAU_score",
+        "R3_PBS_score",
         "P_N",
+        "N1_hedges_mm",
+        "N2_pp_mm",
+        "N3_forest_mm",
         "phi",
         "ELIG_HA",
         "pvout",
@@ -155,7 +219,6 @@ def build_commune_geojson(commune_scores: pd.DataFrame) -> None:
     merged.to_file(OUT_COMMUNES, driver="GeoJSON")
     print(f"Wrote: {OUT_COMMUNES} ({OUT_COMMUNES.stat().st_size/1e6:.1f} MB)")
 
-    # lightweight attribute table for fast scenario computations in browser
     attrs = merged.drop(columns="geometry").copy()
     attrs = attrs.rename(columns={"nom": "name"})
     attrs.to_json(OUT_COMMUNES_ATTRS, orient="records", force_ascii=False)

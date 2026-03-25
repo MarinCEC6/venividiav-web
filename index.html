@@ -63,7 +63,7 @@
               <div class="control-head">
                 <button type="button" class="control-disclosure" id="energySubpillarToggle" aria-expanded="false" aria-controls="energySubpillarBody">
                   <span>Energy</span>
-                  <span class="control-disclosure__chevron">▾</span>
+                  <span class="control-disclosure__chevron">&#9662;</span>
                 </button>
                 <span><span id="wE_val">20.0</span>%</span>
               </div>
@@ -80,10 +80,90 @@
                 <div class="meta-line"><strong>Normalized Energy mix</strong><span id="energyWeightsNorm"></span></div>
               </div>
             </div>
-            <div class="control"><label for="wA">Agricultural intensity <span id="wA_val">20.0</span>%</label><input id="wA" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <div class="control"><label for="wC">Climate resilience <span id="wC_val">20.0</span>%</label><input id="wC" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <div class="control"><label for="wR">Rural resilience <span id="wR_val">20.0</span>%</label><input id="wR" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <div class="control"><label for="wN">Nature conservation <span id="wN_val">20.0</span>%</label><input id="wN" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control control--with-subpanel">
+              <div class="control-head">
+                <button type="button" class="control-disclosure" id="agriSubpillarToggle" aria-expanded="false" aria-controls="agriSubpillarBody">
+                  <span>Agricultural intensity</span>
+                  <span class="control-disclosure__chevron">&#9662;</span>
+                </button>
+                <span><span id="wA_val">20.0</span>%</span>
+              </div>
+              <input id="wA" type="range" min="0" max="100" step="0.1" value="20" />
+              <div class="subpillar-body hidden" id="agriSubpillarBody">
+                <div class="subpillar-meta">
+                  <strong>Agricultural-intensity internal mix</strong>
+                  <span id="agriWeightTotal">100.0%</span>
+                </div>
+                <p class="subpillar-text">Adjust irrigation pressure, pesticide intensity, and on-farm energy dependence.</p>
+                <div class="control"><label for="a1w">A1 Irrigation pressure <span id="a1w_val">33.4</span>%</label><input id="a1w" type="range" min="0" max="100" step="0.1" value="33.4" /></div>
+                <div class="control"><label for="a2w">A2 Pesticide intensity <span id="a2w_val">33.3</span>%</label><input id="a2w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="control"><label for="a3w">A3 Farm energy dependence <span id="a3w_val">33.3</span>%</label><input id="a3w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="meta-line"><strong>Normalized Agricultural-intensity mix</strong><span id="agriWeightsNorm"></span></div>
+              </div>
+            </div>
+            <div class="control control--with-subpanel">
+              <div class="control-head">
+                <button type="button" class="control-disclosure" id="climateSubpillarToggle" aria-expanded="false" aria-controls="climateSubpillarBody">
+                  <span>Climate resilience</span>
+                  <span class="control-disclosure__chevron">&#9662;</span>
+                </button>
+                <span><span id="wC_val">20.0</span>%</span>
+              </div>
+              <input id="wC" type="range" min="0" max="100" step="0.1" value="20" />
+              <div class="subpillar-body hidden" id="climateSubpillarBody">
+                <div class="subpillar-meta">
+                  <strong>Climate-resilience internal mix</strong>
+                  <span id="climateWeightTotal">100.0%</span>
+                </div>
+                <p class="subpillar-text">Adjust water stress, heat exposure, and frost exposure.</p>
+                <div class="control"><label for="c1w">C1 Water stress <span id="c1w_val">33.4</span>%</label><input id="c1w" type="range" min="0" max="100" step="0.1" value="33.4" /></div>
+                <div class="control"><label for="c2w">C2 Heat exposure <span id="c2w_val">33.3</span>%</label><input id="c2w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="control"><label for="c3w">C3 Frost exposure <span id="c3w_val">33.3</span>%</label><input id="c3w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="meta-line"><strong>Normalized Climate-resilience mix</strong><span id="climateWeightsNorm"></span></div>
+              </div>
+            </div>
+            <div class="control control--with-subpanel">
+              <div class="control-head">
+                <button type="button" class="control-disclosure" id="ruralSubpillarToggle" aria-expanded="false" aria-controls="ruralSubpillarBody">
+                  <span>Rural resilience</span>
+                  <span class="control-disclosure__chevron">&#9662;</span>
+                </button>
+                <span><span id="wR_val">20.0</span>%</span>
+              </div>
+              <input id="wR" type="range" min="0" max="100" step="0.1" value="20" />
+              <div class="subpillar-body hidden" id="ruralSubpillarBody">
+                <div class="subpillar-meta">
+                  <strong>Rural-resilience internal mix</strong>
+                  <span id="ruralWeightTotal">100.0%</span>
+                </div>
+                <p class="subpillar-text">Adjust employment decline, land-use decline, and production decline.</p>
+                <div class="control"><label for="r1w">R1 Employment decline <span id="r1w_val">33.4</span>%</label><input id="r1w" type="range" min="0" max="100" step="0.1" value="33.4" /></div>
+                <div class="control"><label for="r2w">R2 Land-use decline <span id="r2w_val">33.3</span>%</label><input id="r2w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="control"><label for="r3w">R3 Production decline <span id="r3w_val">33.3</span>%</label><input id="r3w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="meta-line"><strong>Normalized Rural-resilience mix</strong><span id="ruralWeightsNorm"></span></div>
+              </div>
+            </div>
+            <div class="control control--with-subpanel">
+              <div class="control-head">
+                <button type="button" class="control-disclosure" id="natureSubpillarToggle" aria-expanded="false" aria-controls="natureSubpillarBody">
+                  <span>Nature conservation</span>
+                  <span class="control-disclosure__chevron">&#9662;</span>
+                </button>
+                <span><span id="wN_val">20.0</span>%</span>
+              </div>
+              <input id="wN" type="range" min="0" max="100" step="0.1" value="20" />
+              <div class="subpillar-body hidden" id="natureSubpillarBody">
+                <div class="subpillar-meta">
+                  <strong>Nature-conservation internal mix</strong>
+                  <span id="natureWeightTotal">100.0%</span>
+                </div>
+                <p class="subpillar-text">Adjust hedgerow density, permanent grassland share, and forest context.</p>
+                <div class="control"><label for="n1w">N1 Hedgerow density <span id="n1w_val">33.4</span>%</label><input id="n1w" type="range" min="0" max="100" step="0.1" value="33.4" /></div>
+                <div class="control"><label for="n2w">N2 Permanent grassland <span id="n2w_val">33.3</span>%</label><input id="n2w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="control"><label for="n3w">N3 Forest context <span id="n3w_val">33.3</span>%</label><input id="n3w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
+                <div class="meta-line"><strong>Normalized Nature-conservation mix</strong><span id="natureWeightsNorm"></span></div>
+              </div>
+            </div>
             <label class="toggle-row"><input type="checkbox" id="applyPhi" checked /> Apply <code>phi</code> feasibility multiplier</label>
             <div class="control"><label for="topPct">Visual top threshold: <span id="topPct_val">10</span>%</label><input id="topPct" type="range" min="1" max="50" step="1" value="10" /></div>
             <div class="meta-line"><strong>Normalized weights</strong><span id="weightsNorm"></span></div>
