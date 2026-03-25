@@ -231,6 +231,15 @@ code { color: var(--accent-3); }
 }
 
 .control { margin-top: 12px; }
+.control-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
 .control label {
   display: flex;
   justify-content: space-between;
@@ -243,42 +252,47 @@ code { color: var(--accent-3); }
   width: 100%;
   accent-color: var(--accent);
 }
-.subpillar-panel {
-  margin-top: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  background: rgba(255,255,255,0.025);
-  overflow: hidden;
-}
-.subpillar-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 13px;
-  cursor: pointer;
-  list-style: none;
-}
-.subpillar-summary::-webkit-details-marker {
-  display: none;
-}
-.subpillar-summary span {
+.control-disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
   font-weight: 600;
+  cursor: pointer;
 }
-.subpillar-summary small {
-  color: var(--muted);
-  font-size: 0.78rem;
+.control-disclosure__chevron {
+  color: var(--accent);
+  transition: transform .18s ease;
+}
+.control-disclosure[aria-expanded="true"] .control-disclosure__chevron {
+  transform: rotate(180deg);
+}
+.control--with-subpanel {
+  padding-bottom: 2px;
 }
 .subpillar-body {
-  padding: 0 13px 13px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 10px;
+  padding: 11px 12px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.025);
 }
 .subpillar-meta {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 10px;
   color: var(--muted);
   font-size: 0.82rem;
+}
+.subpillar-text {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 .toggle-row {
   display: flex;

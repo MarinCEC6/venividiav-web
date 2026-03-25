@@ -50,6 +50,8 @@ const energySliderVals = {
 };
 const energyWeightTotalEl = document.getElementById("energyWeightTotal");
 const energyWeightsNormEl = document.getElementById("energyWeightsNorm");
+const energySubpillarToggle = document.getElementById("energySubpillarToggle");
+const energySubpillarBody = document.getElementById("energySubpillarBody");
 const applyPhi = document.getElementById("applyPhi");
 const targetHa = document.getElementById("targetHa");
 const targetHaVal = document.getElementById("targetHa_val");
@@ -258,6 +260,11 @@ function setMapMode(mode) {
     renderLegendFromState();
     refreshMapStyling();
   }
+}
+
+function setEnergySubpillarOpen(open) {
+  energySubpillarBody.classList.toggle("hidden", !open);
+  energySubpillarToggle.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
 function pillarDefinitions() {
@@ -825,8 +832,13 @@ presetButtons.forEach((button) => {
 mapModeButtons.forEach((button) => {
   button.addEventListener("click", () => setMapMode(button.dataset.mapMode));
 });
+energySubpillarToggle.addEventListener("click", () => {
+  const isOpen = energySubpillarToggle.getAttribute("aria-expanded") === "true";
+  setEnergySubpillarOpen(!isOpen);
+});
 contextClose.addEventListener("click", () => setContextPanel(null));
 
+setEnergySubpillarOpen(false);
 init().catch((error) => {
   console.error(error);
   loader.textContent = "The application failed to initialize.";

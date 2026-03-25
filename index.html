@@ -59,28 +59,33 @@
           </section>
 
           <section class="panel-section">
-            <div class="control"><label for="wE">Energy <span id="wE_val">20.0</span>%</label><input id="wE" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <div class="control"><label for="wA">Agricultural intensity <span id="wA_val">20.0</span>%</label><input id="wA" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <div class="control"><label for="wC">Climate resilience <span id="wC_val">20.0</span>%</label><input id="wC" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <div class="control"><label for="wR">Rural resilience <span id="wR_val">20.0</span>%</label><input id="wR" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <div class="control"><label for="wN">Nature conservation <span id="wN_val">20.0</span>%</label><input id="wN" type="range" min="0" max="100" step="0.1" value="20" /></div>
-            <details class="subpillar-panel">
-              <summary class="subpillar-summary">
-                <span>Energy internal mix</span>
-                <small>Adjust E1, E2, and E3 inside the Energy pillar</small>
-              </summary>
-              <div class="subpillar-body">
+            <div class="control control--with-subpanel">
+              <div class="control-head">
+                <button type="button" class="control-disclosure" id="energySubpillarToggle" aria-expanded="false" aria-controls="energySubpillarBody">
+                  <span>Energy</span>
+                  <span class="control-disclosure__chevron">▾</span>
+                </button>
+                <span><span id="wE_val">20.0</span>%</span>
+              </div>
+              <input id="wE" type="range" min="0" max="100" step="0.1" value="20" />
+              <div class="subpillar-body hidden" id="energySubpillarBody">
                 <div class="subpillar-meta">
-                  <strong>Total</strong>
+                  <strong>Energy internal mix</strong>
                   <span id="energyWeightTotal">100.0%</span>
                 </div>
+                <p class="subpillar-text">Adjust E1, E2, and E3 inside the Energy pillar.</p>
                 <div class="control"><label for="e1w">E1 Grid proximity <span id="e1w_val">33.4</span>%</label><input id="e1w" type="range" min="0" max="100" step="0.1" value="33.4" /></div>
                 <div class="control"><label for="e2w">E2 Solar resource <span id="e2w_val">33.3</span>%</label><input id="e2w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
                 <div class="control"><label for="e3w">E3 Parcel structure <span id="e3w_val">33.3</span>%</label><input id="e3w" type="range" min="0" max="100" step="0.1" value="33.3" /></div>
                 <div class="meta-line"><strong>Normalized Energy mix</strong><span id="energyWeightsNorm"></span></div>
               </div>
-            </details>
+            </div>
+            <div class="control"><label for="wA">Agricultural intensity <span id="wA_val">20.0</span>%</label><input id="wA" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control"><label for="wC">Climate resilience <span id="wC_val">20.0</span>%</label><input id="wC" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control"><label for="wR">Rural resilience <span id="wR_val">20.0</span>%</label><input id="wR" type="range" min="0" max="100" step="0.1" value="20" /></div>
+            <div class="control"><label for="wN">Nature conservation <span id="wN_val">20.0</span>%</label><input id="wN" type="range" min="0" max="100" step="0.1" value="20" /></div>
             <label class="toggle-row"><input type="checkbox" id="applyPhi" checked /> Apply <code>phi</code> feasibility multiplier</label>
+            <div class="control"><label for="topPct">Visual top threshold: <span id="topPct_val">10</span>%</label><input id="topPct" type="range" min="1" max="50" step="1" value="10" /></div>
             <div class="meta-line"><strong>Normalized weights</strong><span id="weightsNorm"></span></div>
           </section>
 
@@ -90,7 +95,6 @@
             <div class="control"><label for="targetHa">Deployment target: <span id="targetHa_val">50000</span> ha</label><input id="targetHa" type="range" min="5000" max="150000" step="5000" value="50000" /></div>
             <div class="control"><label for="mobilizationPct">Mobilization rate m: <span id="mobilizationPct_val">0.5</span>%</label><input id="mobilizationPct" type="range" min="0.1" max="10" step="0.1" value="0.5" /></div>
             <div class="control"><label for="density">PV density: <span id="density_val">0.30</span> MWp/ha</label><input id="density" type="range" min="0.1" max="1.0" step="0.01" value="0.30" /></div>
-            <div class="control"><label for="topPct">Visual top threshold: <span id="topPct_val">10</span>%</label><input id="topPct" type="range" min="1" max="50" step="1" value="10" /></div>
           </section>
 
           <section class="panel-section">
