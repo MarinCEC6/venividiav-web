@@ -395,6 +395,16 @@ function pillarExpr(pillarKey) {
   return ["case", hasAll, weightedTerms, ["coalesce", ["get", cfg.topField], 0]];
 }
 
+function pillarDefinitions() {
+  return [
+    { key: "E", field: "P_E", label: "Energy" },
+    { key: "A", field: "P_A", label: "Agricultural intensity" },
+    { key: "C", field: "P_C", label: "Climate resilience" },
+    { key: "R", field: "P_R", label: "Rural resilience" },
+    { key: "N", field: "P_N", label: "Nature conservation" },
+  ];
+}
+
 function scenarioMeaning(w, target, area, outputTWh) {
   const dominant = pillarDefinitions()
     .map((p) => ({ ...p, weight: w[p.key] }))
