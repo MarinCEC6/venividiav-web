@@ -274,7 +274,7 @@ function getInternalWeights(pillarKey) {
 function setPresetState(name) {
   currentPreset = name;
   const label = PRESETS[name]?.label || "Custom";
-  activePresetEl.textContent = `Active profile: ${label}`;
+  if (activePresetEl) activePresetEl.textContent = `Active profile: ${label}`;
   presetButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.preset === name);
   });
@@ -955,7 +955,6 @@ async function init() {
 weightKeys.forEach((k) => {
   sliders[k].addEventListener("input", (ev) => {
     rebalanceWeights(k, ev.target.value);
-    setPresetState("custom");
     updateLabels();
     refreshDebounced();
   });
