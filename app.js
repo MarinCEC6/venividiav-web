@@ -9,6 +9,9 @@ const weightTotalEl = document.getElementById("weightTotal");
 const activePresetEl = document.getElementById("activePreset");
 const mapStatus = document.getElementById("mapStatus");
 const mapModeButtons = [...document.querySelectorAll("[data-map-mode]")];
+const modeExplanation = document.getElementById("modeExplanation");
+const deploymentPanel = document.getElementById("deploymentPanel");
+const annualOutputPanel = document.getElementById("annualOutputPanel");
 const scenarioNarrativeLead = document.getElementById("scenarioNarrativeLead");
 const scenarioNarrativeTags = document.getElementById("scenarioNarrativeTags");
 const scenarioNarrativeBody = document.getElementById("scenarioNarrativeBody");
@@ -361,6 +364,14 @@ function setMapMode(mode) {
   mapModeButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.mapMode === currentMapMode);
   });
+  const isDeploymentMode = currentMapMode === "selection";
+  deploymentPanel?.classList.toggle("hidden", !isDeploymentMode);
+  annualOutputPanel?.classList.toggle("hidden", !isDeploymentMode);
+  if (modeExplanation) {
+    modeExplanation.textContent = isDeploymentMode
+      ? "Deployment scenario shows which municipalities are actually selected once the deployment target, mobilization rate, PV density, and feasibility rule are applied. It helps translate the ranking into a concrete rollout portfolio."
+      : "Merit order shows the continuous municipality ranking implied by the current pillar weights. It helps read how spatial priorities shift when the objective mix is rebalanced.";
+  }
   if (attrs.length) {
     renderLegendFromState();
     refreshMapStyling();
@@ -524,7 +535,7 @@ function renderLegendFromState() {
 
   if (currentMapMode === "selection") {
     legendEl.innerHTML = `
-      <strong>Selection outcome</strong><br/>
+      <strong>Deployment scenario</strong><br/>
       <small>Bright fills mark municipalities selected under the current deployment settings.</small>
       <div class="legend-chip-row">
         <span class="legend-chip"><span class="legend-chip__swatch legend-chip__swatch--selected"></span>Selected</span>
@@ -565,7 +576,7 @@ function refreshMapStyling() {
     ]);
     map.setPaintProperty("communes-line", "line-width", ["case", [">=", expr, currentSelectionThreshold], 1.1, 0.0]);
     map.setPaintProperty("communes-line", "line-color", ["case", [">=", expr, currentSelectionThreshold], "#d7ffe8", "#000000"]);
-    mapStatus.textContent = `Selection-outcome view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`;
+    mapStatus.textContent = `Deployment-scenario view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`;
     return;
   }
 
@@ -700,7 +711,7 @@ async function ensureSubpillarAttrsLoaded() {
   if (subpillarAttrsLoaded) return;
   if (!subpillarAttrsPromise) {
     loader.classList.remove("hidden");
-    loader.textContent = "Loading sub-indicator data?";
+    loader.textContent = "Loading sub-indicator data…";
     subpillarAttrsPromise = fetchJson("./data/communes_subpillars.json")
       .then((records) => {
         const byInsee = new Map(records.map((row) => [String(row.insee), row]));
@@ -823,7 +834,7 @@ async function init() {
     loader.classList.remove("hidden");
     loader.textContent = "PMTiles unavailable, loading GeoJSON fallback…";
     mapStatus.textContent = currentMapMode === "selection"
-      ? "Selection-outcome view · GeoJSON fallback mode"
+      ? "Deployment-scenario view · GeoJSON fallback mode"
       : "Merit-order view · GeoJSON fallback mode";
 
     try {
@@ -875,7 +886,7 @@ async function init() {
     map.resize();
     loader.classList.add("hidden");
     mapStatus.textContent = currentMapMode === "selection"
-      ? `Selection-outcome view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`
+      ? `Deployment-scenario view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`
       : `Merit-order view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`;
 
     if (usingPmtiles) {
@@ -979,6 +990,7 @@ mapModeButtons.forEach((button) => {
 contextClose.addEventListener("click", () => setContextPanel(null));
 
 internalPillarKeys.forEach((pillarKey) => setSubpillarOpen(pillarKey, false));
+setMapMode(currentMapMode);
 window.addEventListener("error", (event) => {
   const message = event?.error?.stack || event?.message || "Unknown browser error";
   console.error("window.onerror", event?.error || event);

@@ -40,7 +40,8 @@
           <h2>How to read the explorer</h2>
           <p class="section-text">
             <strong>Merit order</strong> shows the continuous ranking implied by the current pillar weights.
-            <strong>Selection outcome</strong> shows which municipalities are actually selected once the deployment target,
+            It is the right view for comparing spatial priorities across alternative objective mixes.
+            <strong>Deployment scenario</strong> shows which municipalities are actually selected once the deployment target,
             mobilization rate, feasibility multiplier, and density assumptions are applied.
           </p>
         </section>
@@ -266,6 +267,45 @@
             five pillar scores into a merit order, while deployment settings determine which municipalities are ultimately
             selected. Full derived inputs, documentation, and reproducible workflow files are available on Zenodo.
           </p>
+          <div class="equation-stack">
+            <div class="equation-card">
+              <strong>Eligibility share</strong>
+              <code>
+                &phi;<sub>c</sub> = ELIG_HA<sub>c</sub> / AGRI_HA<sub>c</sub>
+              </code>
+              <p class="equation-note">
+                Municipalities with <code>&phi;<sub>c</sub> = 0</code> have no eligible agricultural area in the feasibility mask.
+              </p>
+            </div>
+            <div class="equation-card">
+              <strong>Pillar score</strong>
+              <code>
+                P<sub>p,c</sub> = &Sigma;<sub>k</sub> w<sub>p,k</sub> s<sub>p,k,c</sub>
+              </code>
+              <p class="equation-note">
+                Each pillar score is a weighted average of its normalized sub-indicators.
+              </p>
+            </div>
+            <div class="equation-card">
+              <strong>Merit-order score</strong>
+              <code>
+                S<sub>c</sub> = &Sigma;<sub>p&isin;{E,A,C,R,N}</sub> &omega;<sub>p</sub> P<sub>p,c</sub>
+                &times; &phi;<sub>c</sub> &nbsp; (if feasibility is applied)
+              </code>
+              <p class="equation-note">
+                The map ranks municipalities with this composite score after the five pillar weights are chosen.
+              </p>
+            </div>
+            <div class="equation-card">
+              <strong>Deployment take</strong>
+              <code>
+                A<sub>c</sub> = m &times; ELIG_HA<sub>c</sub>
+              </code>
+              <p class="equation-note">
+                Municipalities are added from the top of the merit order until the cumulative deployed area reaches the scenario target.
+              </p>
+            </div>
+          </div>
           <ol class="info-list">
             <li>Raw spatial and statistical layers are harmonized to the municipality level.</li>
             <li>Indicators are oriented and normalized so that they can be compared across dimensions.</li>
@@ -280,7 +320,7 @@
           <ol class="info-list">
             <li>Start from a preset or rebalance the five pillar weights manually.</li>
             <li>Use <strong>Merit order</strong> to see how ranking patterns shift spatially.</li>
-            <li>Use <strong>Selection outcome</strong> to see which municipalities are actually captured.</li>
+            <li>Use <strong>Deployment scenario</strong> to see which municipalities are actually captured.</li>
             <li>Adjust deployment assumptions to evaluate how scenario outputs and selected areas change.</li>
           </ol>
         </section>

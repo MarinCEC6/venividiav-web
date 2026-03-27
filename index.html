@@ -22,11 +22,15 @@
           <div class="hero__toolbar">
             <div class="view-switch">
               <button type="button" class="active" data-map-mode="merit">Merit order</button>
-              <button type="button" data-map-mode="selection">Selection outcome</button>
+              <button type="button" data-map-mode="selection">Deployment scenario</button>
             </div>
             <a class="hero__link" href="./about.html">About the tool</a>
             <p class="hero__status" id="mapStatus">Merit-order view · PMTiles / MapLibre rendering</p>
           </div>
+          <p class="hero__mode-note" id="modeExplanation">
+            Merit order shows the continuous municipality ranking implied by the current pillar weights.
+            It is useful for understanding how the spatial priority map changes when the objective mix is rebalanced.
+          </p>
         </div>
       </header>
 
@@ -35,7 +39,6 @@
           <section class="panel-section panel-section--intro">
             <div class="section-head">
               <div>
-                <p class="section-kicker">Scenario design</p>
                 <h2>Pillar weights</h2>
               </div>
               <div class="weight-total">
@@ -169,15 +172,15 @@
             <div class="meta-line"><strong>Normalized weights</strong><span id="weightsNorm"></span></div>
           </section>
 
-          <section class="panel-section">
+          <section class="panel-section" id="deploymentPanel">
             <p class="section-kicker">Deployment assumptions</p>
-            <h2>Scenario parameters</h2>
+            <h2>Deployment parameters</h2>
             <div class="control"><label for="targetHa">Deployment target: <span id="targetHa_val">50000</span> ha</label><input id="targetHa" type="range" min="5000" max="150000" step="5000" value="50000" /></div>
             <div class="control"><label for="mobilizationPct">Mobilization rate m: <span id="mobilizationPct_val">0.5</span>%</label><input id="mobilizationPct" type="range" min="0.1" max="10" step="0.1" value="0.5" /></div>
             <div class="control"><label for="density">PV density: <span id="density_val">0.30</span> MWp/ha</label><input id="density" type="range" min="0.1" max="1.0" step="0.01" value="0.30" /></div>
           </section>
 
-          <section class="panel-section">
+          <section class="panel-section" id="annualOutputPanel">
             <p class="section-kicker">Annual outputs</p>
             <h2>Instant summary</h2>
             <div class="kpi-grid">
