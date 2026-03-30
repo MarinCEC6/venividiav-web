@@ -270,38 +270,48 @@
           <div class="equation-stack">
             <div class="equation-card">
               <strong>Eligibility share</strong>
-              <code>
+              <div class="equation-formula">
                 &phi;<sub>c</sub> = ELIG_HA<sub>c</sub> / AGRI_HA<sub>c</sub>
-              </code>
+              </div>
               <p class="equation-note">
+                <strong>Variables:</strong> <code>&phi;<sub>c</sub></code> is the eligible agricultural share in municipality <code>c</code>;
+                <code>ELIG_HA<sub>c</sub></code> is eligible agricultural area; <code>AGRI_HA<sub>c</sub></code> is total agricultural area.
                 Municipalities with <code>&phi;<sub>c</sub> = 0</code> have no eligible agricultural area in the feasibility mask.
               </p>
             </div>
             <div class="equation-card">
               <strong>Pillar score</strong>
-              <code>
+              <div class="equation-formula">
                 P<sub>p,c</sub> = &Sigma;<sub>k</sub> w<sub>p,k</sub> s<sub>p,k,c</sub>
-              </code>
+              </div>
               <p class="equation-note">
+                <strong>Variables:</strong> <code>P<sub>p,c</sub></code> is the score of pillar <code>p</code> in municipality <code>c</code>;
+                <code>w<sub>p,k</sub></code> is the weight of indicator <code>k</code> inside pillar <code>p</code>;
+                <code>s<sub>p,k,c</sub></code> is the normalized indicator score.
                 Each pillar score is a weighted average of its normalized sub-indicators.
               </p>
             </div>
             <div class="equation-card">
               <strong>Merit-order score</strong>
-              <code>
+              <div class="equation-formula">
                 S<sub>c</sub> = &Sigma;<sub>p&isin;{E,A,C,R,N}</sub> &omega;<sub>p</sub> P<sub>p,c</sub>
                 &times; &phi;<sub>c</sub> &nbsp; (if feasibility is applied)
-              </code>
+              </div>
               <p class="equation-note">
+                <strong>Variables:</strong> <code>S<sub>c</sub></code> is the overall merit-order score;
+                <code>&omega;<sub>p</sub></code> is the user-defined weight of pillar <code>p</code>;
+                <code>P<sub>p,c</sub></code> is the pillar score; and <code>&phi;<sub>c</sub></code> is optionally used as a feasibility multiplier.
                 The map ranks municipalities with this composite score after the five pillar weights are chosen.
               </p>
             </div>
             <div class="equation-card">
               <strong>Deployment take</strong>
-              <code>
+              <div class="equation-formula">
                 A<sub>c</sub> = m &times; ELIG_HA<sub>c</sub>
-              </code>
+              </div>
               <p class="equation-note">
+                <strong>Variables:</strong> <code>A<sub>c</sub></code> is the deployed area contributed by municipality <code>c</code>;
+                <code>m</code> is the mobilization rate; <code>ELIG_HA<sub>c</sub></code> is eligible agricultural area.
                 Municipalities are added from the top of the merit order until the cumulative deployed area reaches the scenario target.
               </p>
             </div>
