@@ -41,113 +41,8 @@ const sliderVals = {
   R: document.getElementById("wR_val"),
   N: document.getElementById("wN_val"),
 };
-const internalPillarConfigs = {
-  E: {
-    label: "Energy",
-    topField: "P_E",
-    keys: ["E1", "E2", "E3"],
-    fields: { E1: "E1_score", E2: "E2_score", E3: "E3_score" },
-    sliders: {
-      E1: document.getElementById("e1w"),
-      E2: document.getElementById("e2w"),
-      E3: document.getElementById("e3w"),
-    },
-    sliderVals: {
-      E1: document.getElementById("e1w_val"),
-      E2: document.getElementById("e2w_val"),
-      E3: document.getElementById("e3w_val"),
-    },
-    totalEl: document.getElementById("energyWeightTotal"),
-    normEl: document.getElementById("energyWeightsNorm"),
-    toggleEl: document.getElementById("energySubpillarToggle"),
-    bodyEl: document.getElementById("energySubpillarBody"),
-    defaultValues: { E1: 33.4, E2: 33.3, E3: 33.3 },
-  },
-  A: {
-    label: "Agricultural intensity",
-    topField: "P_A",
-    keys: ["A1", "A2", "A3"],
-    fields: { A1: "A1_score", A2: "A2_score", A3: "A3_score" },
-    sliders: {
-      A1: document.getElementById("a1w"),
-      A2: document.getElementById("a2w"),
-      A3: document.getElementById("a3w"),
-    },
-    sliderVals: {
-      A1: document.getElementById("a1w_val"),
-      A2: document.getElementById("a2w_val"),
-      A3: document.getElementById("a3w_val"),
-    },
-    totalEl: document.getElementById("agriWeightTotal"),
-    normEl: document.getElementById("agriWeightsNorm"),
-    toggleEl: document.getElementById("agriSubpillarToggle"),
-    bodyEl: document.getElementById("agriSubpillarBody"),
-    defaultValues: { A1: 33.4, A2: 33.3, A3: 33.3 },
-  },
-  C: {
-    label: "Climate resilience",
-    topField: "P_C",
-    keys: ["C1", "C2", "C3"],
-    fields: { C1: "c1", C2: "c2", C3: "c3" },
-    sliders: {
-      C1: document.getElementById("c1w"),
-      C2: document.getElementById("c2w"),
-      C3: document.getElementById("c3w"),
-    },
-    sliderVals: {
-      C1: document.getElementById("c1w_val"),
-      C2: document.getElementById("c2w_val"),
-      C3: document.getElementById("c3w_val"),
-    },
-    totalEl: document.getElementById("climateWeightTotal"),
-    normEl: document.getElementById("climateWeightsNorm"),
-    toggleEl: document.getElementById("climateSubpillarToggle"),
-    bodyEl: document.getElementById("climateSubpillarBody"),
-    defaultValues: { C1: 33.4, C2: 33.3, C3: 33.3 },
-  },
-  R: {
-    label: "Rural resilience",
-    topField: "P_R",
-    keys: ["R1", "R2", "R3"],
-    fields: { R1: "R1_TF_score", R2: "R2_SAU_score", R3: "R3_PBS_score" },
-    sliders: {
-      R1: document.getElementById("r1w"),
-      R2: document.getElementById("r2w"),
-      R3: document.getElementById("r3w"),
-    },
-    sliderVals: {
-      R1: document.getElementById("r1w_val"),
-      R2: document.getElementById("r2w_val"),
-      R3: document.getElementById("r3w_val"),
-    },
-    totalEl: document.getElementById("ruralWeightTotal"),
-    normEl: document.getElementById("ruralWeightsNorm"),
-    toggleEl: document.getElementById("ruralSubpillarToggle"),
-    bodyEl: document.getElementById("ruralSubpillarBody"),
-    defaultValues: { R1: 33.4, R2: 33.3, R3: 33.3 },
-  },
-  N: {
-    label: "Nature conservation",
-    topField: "P_N",
-    keys: ["N1", "N2", "N3"],
-    fields: { N1: "N1_hedges_mm", N2: "N2_pp_mm", N3: "N3_forest_mm" },
-    sliders: {
-      N1: document.getElementById("n1w"),
-      N2: document.getElementById("n2w"),
-      N3: document.getElementById("n3w"),
-    },
-    sliderVals: {
-      N1: document.getElementById("n1w_val"),
-      N2: document.getElementById("n2w_val"),
-      N3: document.getElementById("n3w_val"),
-    },
-    totalEl: document.getElementById("natureWeightTotal"),
-    normEl: document.getElementById("natureWeightsNorm"),
-    toggleEl: document.getElementById("natureSubpillarToggle"),
-    bodyEl: document.getElementById("natureSubpillarBody"),
-    defaultValues: { N1: 33.4, N2: 33.3, N3: 33.3 },
-  },
-};
+const internalPillarConfigs = {};
+
 const applyPhi = document.getElementById("applyPhi");
 const targetHa = document.getElementById("targetHa");
 const targetHaVal = document.getElementById("targetHa_val");
@@ -729,19 +624,13 @@ function buildMapStyle(pmtilesUrl) {
   return {
     version: 8,
     sources: {
-      dark: {
-        type: "raster",
-        tiles: ["https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"],
-        tileSize: 256,
-        attribution: "© OpenStreetMap contributors © CARTO",
-      },
       communes: {
         type: "vector",
         url: `pmtiles://${pmtilesUrl}`,
       },
     },
     layers: [
-      { id: "dark", type: "raster", source: "dark" },
+      { id: "background", type: "background", paint: { "background-color": "#1d242d" } },
       {
         id: "communes-fill",
         type: "fill",
