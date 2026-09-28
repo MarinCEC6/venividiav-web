@@ -12,8 +12,11 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = ROOT.parent
 
-MASTER_SCENARIOS = Path(r"C:/data/RESULTS_AV/02_TABLES/policy_scenarios_custom_full/MASTER_used_for_custom_scenarios_full.csv")
-ENERGY_COMPONENTS = next(Path(r"C:/Users/mguinard/Documents").glob("**/E_global_communes_equal_METROPOLE.csv"))
+MASTER_PARQUET = Path(r"C:/data/RESULTS_AV/04_APPENDIX/prospective_fixedK_closure_2026/data/master_communes_fixedK_PE_all.parquet")
+LEGACY_MASTER_SCENARIOS = Path(r"C:/data/RESULTS_AV/02_TABLES/policy_scenarios_custom_full/MASTER_used_for_custom_scenarios_full.csv")
+MASTER_SCENARIOS = MASTER_PARQUET if MASTER_PARQUET.exists() else LEGACY_MASTER_SCENARIOS
+DOCUMENTS_DIR = Path(r"C:/Users/mguinard/Documents")
+ENERGY_COMPONENTS = next(DOCUMENTS_DIR.glob("**/E_global_communes_equal_METROPOLE.csv"), None)
 AGRI_COMPONENTS = Path(r"C:/data/Pillar_A_commune.csv")
 CLIMATE_COMPONENTS = Path(r"C:/data/C_pillar_commune.csv")
 RURAL_COMPONENTS = Path(r"C:/data/R_econ_commune.csv")
@@ -121,18 +124,31 @@ def load_commune_scores() -> pd.DataFrame:
     if not MASTER_SCENARIOS.exists():
         raise FileNotFoundError(f"Missing source table: {MASTER_SCENARIOS}")
 
-    df = pd.read_csv(MASTER_SCENARIOS, dtype={"INSEE5": str, "DEP": str}).copy()
-    required = {"INSEE5", "DEP", "ELIG_HA", "pvout_kwh_kwp_y", "P_E", "P_A", "P_C", "P_R", "P_N", "phi"}
-    missing_cols = sorted(required - set(df.columns))
-    if missing_cols:
-        raise ValueError(f"Missing columns in {MASTER_SCENARIOS.name}: {missing_cols}")
+    if MASTER_SCENARIOS.suffix == ".parquet":
+        df = pd.read_parquet(MASTER_SCENARIOS).copy()
+        required = {"insee", "dep", "P_E_fixedK50", "P_A", "P_C", "P_R", "P_N", "phi", "ELIG_HA", "pvout"}
+        missing_cols = sorted(required - set(df.columns))
+        if missing_cols:
+            raise ValueError(f"Missing columns in {MASTER_SCENARIOS.name}: {missing_cols}")
+        if "P_E" in df.columns:
+            df = df.drop(columns=["P_E"])
+        df["P_E"] = df["P_E_fixedK50"]
+        df["insee"] = df["insee"].astype(str).str.strip().str.upper().str.zfill(5)
+        df["dep"] = normalize_dep(df["dep"])
+        df["phi"] = pd.to_numeric(df["phi"], errors="coerce").fillna(0.0).clip(lower=0, upper=1)
+        df = df[["insee", "dep", "P_E", "P_A", "P_C", "P_R", "P_N", "phi", "ELIG_HA", "pvout"]].copy()
+    else:
+        df = pd.read_csv(MASTER_SCENARIOS, dtype={"INSEE5": str, "DEP": str}).copy()
+        required = {"INSEE5", "DEP", "ELIG_HA", "pvout_kwh_kwp_y", "P_E", "P_A", "P_C", "P_R", "P_N", "phi"}
+        missing_cols = sorted(required - set(df.columns))
+        if missing_cols:
+            raise ValueError(f"Missing columns in {MASTER_SCENARIOS.name}: {missing_cols}")
 
-    df["insee"] = df["INSEE5"].astype(str).str.strip().str.upper().str.zfill(5)
-    df["dep"] = normalize_dep(df["DEP"])
-    df = df.rename(columns={"pvout_kwh_kwp_y": "pvout"})
+        df["insee"] = df["INSEE5"].astype(str).str.strip().str.upper().str.zfill(5)
+        df["dep"] = normalize_dep(df["DEP"])
+        df = df.rename(columns={"pvout_kwh_kwp_y": "pvout"})
 
-    keep = ["insee", "dep", "P_E", "P_A", "P_C", "P_R", "P_N", "phi", "ELIG_HA", "pvout"]
-    df = df[keep].copy()
+        df = df[["insee", "dep", "P_E", "P_A", "P_C", "P_R", "P_N", "phi", "ELIG_HA", "pvout"]].copy()
 
     for c in ["P_E", "P_A", "P_C", "P_R", "P_N", "ELIG_HA", "pvout"]:
         df[c] = pd.to_numeric(df[c], errors="coerce")
@@ -140,29 +156,38 @@ def load_commune_scores() -> pd.DataFrame:
 
     bad_required = df[["P_E", "P_A", "P_C", "P_R", "P_N", "ELIG_HA", "pvout"]].isna().any(axis=1)
     if bad_required.any():
-        sample = df.loc[bad_required, ["insee", "dep"]].head(10).to_dict(orient="records")
-        raise ValueError(
-            f"Found {int(bad_required.sum())} rows with missing required values in MASTER table. "
-            f"Sample: {sample}"
-        )
+        dropped = int(bad_required.sum())
+        print(f"Dropping {dropped} rows with missing required values from the final master table.")
+        df = df.loc[~bad_required].copy()
 
     if df["insee"].duplicated().any():
         df = df.sort_values(["insee"]).drop_duplicates("insee", keep="first")
 
-    for name, spec in SUBINDICATOR_SPECS.items():
-        comp = load_component_table(name, spec)
-        df = df.merge(comp, on="insee", how="left", validate="one_to_one")
-        fallback = spec.get("fallback")
-        if fallback:
-            for col in spec["required"]:
-                df[col] = df[col].fillna(df[fallback])
-        bad = df[spec["required"]].isna().any(axis=1)
-        if bad.any():
-            sample = df.loc[bad, ["insee", "dep"]].head(10).to_dict(orient="records")
-            raise ValueError(
-                f"Found {int(bad.sum())} rows with missing {name} sub-indicators after merge. "
-                f"Sample: {sample}"
-            )
+    if MASTER_SCENARIOS.suffix != ".parquet":
+        for name, spec in SUBINDICATOR_SPECS.items():
+            comp = load_component_table(name, spec)
+            df = df.merge(comp, on="insee", how="left", validate="one_to_one")
+            fallback = spec.get("fallback")
+            if fallback:
+                for col in spec["required"]:
+                    df[col] = df[col].fillna(df[fallback])
+            bad = df[spec["required"]].isna().any(axis=1)
+            if bad.any():
+                sample = df.loc[bad, ["insee", "dep"]].head(10).to_dict(orient="records")
+                raise ValueError(
+                    f"Found {int(bad.sum())} rows with missing {name} sub-indicators after merge. "
+                    f"Sample: {sample}"
+                )
+    else:
+        for name, spec in SUBINDICATOR_SPECS.items():
+            if spec["path"] is None or not spec["path"].exists():
+                continue
+            comp = load_component_table(name, spec)
+            df = df.merge(comp, on="insee", how="left", validate="one_to_one")
+            fallback = spec.get("fallback")
+            if fallback:
+                for col in spec["required"]:
+                    df[col] = df[col].fillna(df[fallback])
 
     return df
 
@@ -192,30 +217,18 @@ def build_commune_geojson(commune_scores: pd.DataFrame) -> None:
         "dep",
         "commune_name",
         "P_E",
-        "E1_score",
-        "E2_score",
-        "E3_score",
         "P_A",
-        "A1_score",
-        "A2_score",
-        "A3_score",
         "P_C",
-        "c1",
-        "c2",
-        "c3",
         "P_R",
-        "R1_TF_score",
-        "R2_SAU_score",
-        "R3_PBS_score",
         "P_N",
-        "N1_hedges_mm",
-        "N2_pp_mm",
-        "N3_forest_mm",
         "phi",
         "ELIG_HA",
         "pvout",
         "geometry",
     ]
+    for subcol in ["E1_score", "E2_score", "E3_score", "A1_score", "A2_score", "A3_score", "c1", "c2", "c3", "R1_TF_score", "R2_SAU_score", "R3_PBS_score", "N1_hedges_mm", "N2_pp_mm", "N3_forest_mm"]:
+        if subcol in merged.columns:
+            keep.append(subcol)
     merged = merged[keep]
     merged.to_file(OUT_COMMUNES, driver="GeoJSON")
     print(f"Wrote: {OUT_COMMUNES} ({OUT_COMMUNES.stat().st_size/1e6:.1f} MB)")
@@ -229,13 +242,17 @@ def build_commune_geojson(commune_scores: pd.DataFrame) -> None:
         "R1_TF_score", "R2_SAU_score", "R3_PBS_score",
         "N1_hedges_mm", "N2_pp_mm", "N3_forest_mm",
     ]
-    base_cols = [c for c in attrs.columns if c not in sub_cols]
+    available_sub_cols = [c for c in sub_cols if c in attrs.columns]
+    base_cols = [c for c in attrs.columns if c not in available_sub_cols]
 
     attrs[base_cols].to_json(OUT_COMMUNES_ATTRS, orient="records", force_ascii=False)
     print(f"Wrote: {OUT_COMMUNES_ATTRS} ({OUT_COMMUNES_ATTRS.stat().st_size/1e6:.1f} MB)")
 
-    attrs[["insee", *sub_cols]].to_json(OUT_COMMUNES_SUBATTRS, orient="records", force_ascii=False)
-    print(f"Wrote: {OUT_COMMUNES_SUBATTRS} ({OUT_COMMUNES_SUBATTRS.stat().st_size/1e6:.1f} MB)")
+    if available_sub_cols:
+        attrs[["insee", *available_sub_cols]].to_json(OUT_COMMUNES_SUBATTRS, orient="records", force_ascii=False)
+        print(f"Wrote: {OUT_COMMUNES_SUBATTRS} ({OUT_COMMUNES_SUBATTRS.stat().st_size/1e6:.1f} MB)")
+    else:
+        print(f"No sub-indicator columns available; skipping {OUT_COMMUNES_SUBATTRS}")
 
 
 def build_department_geojson(commune_scores: pd.DataFrame) -> None:

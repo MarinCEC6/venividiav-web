@@ -167,13 +167,13 @@ const presetButtons = [...document.querySelectorAll("[data-preset]")];
 const internalPillarKeys = Object.keys(internalPillarConfigs);
 
 const PRESETS = {
-  balanced: { label: "Balanced", values: [20, 20, 20, 20, 20] },
-  energy: { label: "Energy-first", values: [100, 0, 0, 0, 0] },
-  agronomy: { label: "Agricultural-intensity-first", values: [0, 100, 0, 0, 0] },
-  climate: { label: "Climate-first", values: [0, 0, 100, 0, 0] },
-  rural: { label: "Rural-first", values: [0, 0, 0, 100, 0] },
-  nature: { label: "Nature-first", values: [0, 0, 0, 0, 100] },
-  bau: { label: "BAU (E/A 50–50)", values: [50, 50, 0, 0, 0] },
+balanced: { label: "Balanced", values: [20, 20, 20, 20, 20] },
+energy: { label: "Energy-first", values: [100, 0, 0, 0, 0] },
+agronomy: { label: "Agricultural-intensity-first", values: [0, 100, 0, 0, 0] },
+climate: { label: "Climate-resilience-first", values: [0, 0, 100, 0, 0] },
+rural: { label: "Rural-resilience-first", values: [0, 0, 0, 100, 0] },
+nature: { label: "Nature-conservation-first", values: [0, 0, 0, 0, 100] },
+bau: { label: "BAU", values: [20, 20, 20, 20, 20] },
 };
 
 let map;
@@ -440,10 +440,10 @@ function scenarioMeaning(w, target, area, outputTWh) {
   if (target >= 100000) tags.push("Large deployment target");
   else tags.push("Early deployment tranche");
 
-  const body = `${leadText} At the current settings, the app fills a ${targetShort} deployment portfolio, selecting ${fmtNum(
+  const body = `${leadText} At the current settings, the app builds a ${targetShort} spatial targeting portfolio, selecting ${fmtNum(
     attrs.filter((r) => r._selected).length,
     0,
-  )} municipalities for ${fmtNum(area, 0)} ha and about ${fmtNum(outputTWh, 3)} TWh/year. Use the map clicks to see which local pillar mix explains a municipality's position in that portfolio.`;
+  )} municipalities for ${fmtNum(area, 0)} ha and about ${fmtNum(outputTWh, 3)} TWh/year. This is a ranking under the chosen objective mix, not a claim of realized benefit or a guaranteed causal effect of agrivoltaics at each location.`;
 
   return { lead: leadText, tags, body };
 }

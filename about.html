@@ -29,9 +29,9 @@
           <p class="section-kicker">Purpose</p>
           <h2>What this tool is for</h2>
           <p class="section-text">
-            VeniVidiAV helps users compare agrivoltaic siting strategies under alternative objective priorities.
-            Rather than producing one fixed "best" map, it makes visible how different choices reshape both the
-            merit order of municipalities and the subset ultimately selected under a deployment scenario.
+            VeniVidiAV helps users compare agrivoltaic siting priorities under alternative objective mixes.
+            The tool is designed for spatial targeting: it shows where municipalities rank most highly under each objective,
+            without implying that a score corresponds to a guaranteed causal effect of agrivoltaics on the ground.
           </p>
         </section>
 
@@ -40,9 +40,9 @@
           <h2>How to read the explorer</h2>
           <p class="section-text">
             <strong>Merit order</strong> shows the continuous ranking implied by the current pillar weights.
-            It is the right view for comparing spatial priorities across alternative objective mixes.
-            <strong>Deployment scenario</strong> shows which municipalities are actually selected once the deployment target,
-            mobilization rate, feasibility multiplier, and density assumptions are applied.
+            It is the right view for comparing spatial targeting priorities across objective mixes.
+            <strong>Deployment scenario</strong> shows which municipalities are selected once the deployment target,
+            mobilization rate, feasibility share, and density assumptions are applied.
           </p>
         </section>
 
@@ -50,32 +50,34 @@
           <p class="section-kicker">Pillars</p>
           <h2>What the five pillars contain</h2>
           <p class="section-text">
-            Each pillar combines several municipality-level indicators that are normalized onto a common scale before
-            scenario weighting. The explorer does not display raw variables directly; it shows the resulting composite
-            scores used in the ranking and deployment logic.
+            Each pillar is a municipality-level targeting score used to rank places under a particular objective.
+            High values indicate stronger relevance for spatial targeting under that objective; they do not imply a
+            realized benefit or a guaranteed causal effect of agrivoltaics. The final scientific implementation uses the
+            fixed-K50 Energy score, while the remaining four pillars are interpreted as potential co-benefits / targeting
+            potential rather than realized outcomes.
           </p>
           <div class="info-pillars">
             <div class="info-pillar">
               <strong>Energy</strong>
-              <span>Combines PV productivity, grid access, and parcel structure to represent expected yield and developability.</span>
+              <span>Represents prospective cost-efficiency of electricity production, using a municipal LCOE-based score at fixed K50. High values indicate lower cost per kWh and stronger priority under the energy objective.</span>
               <ul class="info-sublist">
-                <li>PVOUT</li>
-                <li>Distance to nearest substation</li>
-                <li>Average parcel size</li>
+                <li>LCOE-based municipal score</li>
+                <li>Fixed K50 = 11.3 MWp</li>
+                <li>PVOUT and grid cost included</li>
               </ul>
             </div>
             <div class="info-pillar">
               <strong>Agricultural intensity</strong>
-              <span>Targets input-intensive systems where agrivoltaics may interact more strongly with farm practices and resource use.</span>
+              <span>Identifies more input-intensive farming systems, interpreted under a transition rationale as offering greater marginal scope for changes in agricultural practices.</span>
               <ul class="info-sublist">
-                <li>Irrigation withdrawals per hectare</li>
-                <li>Pesticide intensity proxy</li>
-                <li>On-farm primary energy dependence</li>
+                <li>Irrigation intensity</li>
+                <li>Pesticide intensity</li>
+                <li>On-farm primary-energy intensity</li>
               </ul>
             </div>
             <div class="info-pillar">
               <strong>Climate resilience</strong>
-              <span>Captures climatic exposure conditions under which shading may provide stronger agronomic value.</span>
+              <span>Identifies locations where water, heat or frost stress makes protective microclimatic effects of agrivoltaics particularly relevant to target.</span>
               <ul class="info-sublist">
                 <li>Water deficit</li>
                 <li>Heat exposure</li>
@@ -84,19 +86,19 @@
             </div>
             <div class="info-pillar">
               <strong>Rural resilience</strong>
-              <span>Represents long-run agricultural fragility and structural decline in local farming systems.</span>
+              <span>Identifies agricultural areas experiencing stronger long-run structural decline.</span>
               <ul class="info-sublist">
-                <li>Agricultural employment decline</li>
-                <li>SAU decline</li>
-                <li>PBS decline</li>
+                <li>Agricultural employment</li>
+                <li>Utilised agricultural area</li>
+                <li>Economic output / agricultural fragility</li>
               </ul>
             </div>
             <div class="info-pillar">
               <strong>Nature conservation</strong>
-              <span>Represents ecological infrastructure and landscape context in and around agricultural land.</span>
+              <span>Identifies agricultural landscapes with stronger ecological and landscape infrastructure under a conservation rationale.</span>
               <ul class="info-sublist">
                 <li>Hedgerow density</li>
-                <li>Permanent grassland share</li>
+                <li>Permanent grassland</li>
                 <li>Forest context</li>
               </ul>
             </div>
@@ -137,22 +139,10 @@
                   <td colspan="4">Energy pillar</td>
                 </tr>
                 <tr>
-                  <td><strong>E1</strong> Grid proximity</td>
-                  <td>ODRE substations (2025)</td>
-                  <td>Distance to nearest substation (km; municipality centroid)</td>
-                  <td>Proxy for grid access and connection conditions.</td>
-                </tr>
-                <tr>
-                  <td><strong>E2</strong> Solar resource</td>
-                  <td>Global Solar Atlas v2</td>
-                  <td>PVOUT (kWh/kWp/year; municipality level)</td>
-                  <td>Captures expected photovoltaic productivity and is also used in electricity accounting.</td>
-                </tr>
-                <tr>
-                  <td><strong>E3</strong> Parcel structure</td>
-                  <td>RPG (2022)</td>
-                  <td>Mean parcel area (ha/parcel; municipality level)</td>
-                  <td>Proxy for developability and layout conditions.</td>
+                  <td><strong>P_E</strong> Fixed-K50 energy score</td>
+                  <td>Final municipal LCOE-based score</td>
+                  <td>Prospective cost-efficiency of electricity production at K50 = 11.3 MWp</td>
+                  <td>Ranks municipalities by lower discounted cost per kWh produced, using the final fixed-K50 scientific specification.</td>
                 </tr>
 
                 <tr class="info-table__group">
