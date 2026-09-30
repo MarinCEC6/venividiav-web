@@ -41,7 +41,56 @@ const sliderVals = {
   R: document.getElementById("wR_val"),
   N: document.getElementById("wN_val"),
 };
-const internalPillarConfigs = {};
+const internalPillarConfigs = {
+  A: {
+    label: "Agricultural intensity",
+    keys: ["A1", "A2", "A3"],
+    labels: {
+      A1: "Irrigation pressure",
+      A2: "Pesticide intensity",
+      A3: "Energy-input intensity",
+    },
+    fields: { A1: "A1_score", A2: "A2_score", A3: "A3_score" },
+    topField: "P_A",
+    defaultValues: { A1: 33.3, A2: 33.3, A3: 33.3 },
+  },
+  C: {
+    label: "Climate resilience",
+    keys: ["C1", "C2", "C3"],
+    labels: {
+      C1: "Water stress",
+      C2: "Heat stress",
+      C3: "Frost stress",
+    },
+    fields: { C1: "c1", C2: "c2", C3: "c3" },
+    topField: "P_C",
+    defaultValues: { C1: 33.3, C2: 33.3, C3: 33.3 },
+  },
+  R: {
+    label: "Rural resilience",
+    keys: ["R1", "R2", "R3"],
+    labels: {
+      R1: "Farm employment",
+      R2: "Agricultural area",
+      R3: "Producer viability",
+    },
+    fields: { R1: "R1_TF_score", R2: "R2_SAU_score", R3: "R3_PBS_score" },
+    topField: "P_R",
+    defaultValues: { R1: 33.3, R2: 33.3, R3: 33.3 },
+  },
+  N: {
+    label: "Nature conservation",
+    keys: ["N1", "N2", "N3"],
+    labels: {
+      N1: "Hedgerow density",
+      N2: "Landscape permeability",
+      N3: "Forest context",
+    },
+    fields: { N1: "N1_hedges_mm", N2: "N2_pp_mm", N3: "N3_forest_mm" },
+    topField: "P_N",
+    defaultValues: { N1: 33.3, N2: 33.3, N3: 33.3 },
+  },
+};
 
 const applyPhi = document.getElementById("applyPhi");
 const targetHa = document.getElementById("targetHa");
@@ -233,10 +282,69 @@ function rebalanceSliderGroup(keys, sliderGroup, raw, step, changedKey, changedV
   });
 }
 
+function buildInternalControls() {
+ const container = document.getElementById("internalControls");
+ if (!container) return;
+
+ const html = internalPillarKeys
+   .map((pillarKey) => {
+     const cfg = internalPillarConfigs[pillarKey];
+     const controls = cfg.keys
+       .map(
+         (key) => `
+           <div class="control">
+             <div class="control-head">
+               <span>${cfg.labels[key]}</span>
+               <span><span id="${pillarKey}_${key}_val">33.3</span>%</span>
+             </div>
+             <input id="${pillarKey}_${key}" type="range" min="0" max="100" step="0.1" value="33.3" />
+           </div>
+         `,
+       )
+       .join("");
+
+     return `
+       <div class="control control--with-subpanel">
+         <button type="button" class="control-disclosure" aria-expanded="false" data-pillar="${pillarKey}">
+           <span>${cfg.label}</span>
+           <span class="control-disclosure__chevron">▾</span>
+         </button>
+         <div class="subpillar-body hidden" data-body="${pillarKey}">
+           <div class="subpillar-meta">
+             <span>Internal mix</span>
+             <strong id="${pillarKey}_total">100.0%</strong>
+           </div>
+           <p class="subpillar-text">Weights are normalized to 100% within this pillar.</p>
+           ${controls}
+           <div class="meta-line"><strong>Normalized mix</strong><span id="${pillarKey}_norm"></span></div>
+         </div>
+       </div>
+     `;
+   })
+   .join("");
+
+ container.innerHTML = html;
+
+ internalPillarKeys.forEach((pillarKey) => {
+   const cfg = internalPillarConfigs[pillarKey];
+   cfg.toggleEl = document.querySelector(`[data-pillar="${pillarKey}"]`);
+   cfg.bodyEl = document.querySelector(`[data-body="${pillarKey}"]`);
+   cfg.sliders = {};
+   cfg.sliderVals = {};
+   cfg.keys.forEach((key) => {
+     cfg.sliders[key] = document.getElementById(`${pillarKey}_${key}`);
+     cfg.sliderVals[key] = document.getElementById(`${pillarKey}_${key}_val`);
+   });
+   cfg.totalEl = document.getElementById(`${pillarKey}_total`);
+   cfg.normEl = document.getElementById(`${pillarKey}_norm`);
+ });
+}
+
 function updateLabels() {
   for (const k of weightKeys) sliderVals[k].textContent = Number(sliders[k].value).toFixed(1);
   for (const pillarKey of internalPillarKeys) {
     const cfg = internalPillarConfigs[pillarKey];
+    if (!cfg || !cfg.sliders) continue;
     for (const key of cfg.keys) cfg.sliderVals[key].textContent = Number(cfg.sliders[key].value).toFixed(1);
     const total = Object.values(getRawInternalWeights(pillarKey)).reduce((a, b) => a + b, 0);
     cfg.totalEl.textContent = `${total.toFixed(1)}%`;
@@ -252,6 +360,26 @@ function updateLabels() {
   const w = getWeights();
   weightsNormEl.textContent = `E ${w.E.toFixed(2)} | A ${w.A.toFixed(2)} | C ${w.C.toFixed(2)} | R ${w.R.toFixed(2)} | N ${w.N.toFixed(2)}`;
   setPresetState(detectPresetName());
+}
+
+function bindInternalPillarControls() {
+ internalPillarKeys.forEach((pillarKey) => {
+   const cfg = internalPillarConfigs[pillarKey];
+   if (!cfg || !cfg.toggleEl || !cfg.sliders) return;
+   cfg.keys.forEach((key) => {
+     cfg.sliders[key].addEventListener("input", async (ev) => {
+       rebalanceInternalWeights(pillarKey, key, ev.target.value);
+       updateLabels();
+       await ensureSubpillarAttrsLoaded();
+       refreshDebounced();
+     });
+   });
+   cfg.toggleEl.addEventListener("click", () => {
+     const isOpen = cfg.toggleEl.getAttribute("aria-expanded") === "true";
+     setSubpillarOpen(pillarKey, !isOpen);
+   });
+   setSubpillarOpen(pillarKey, false);
+ });
 }
 
 function setMapMode(mode) {
@@ -620,40 +748,8 @@ async function ensureSubpillarAttrsLoaded() {
   return subpillarAttrsPromise;
 }
 
-function buildMapStyle(pmtilesUrl) {
-  return {
-    version: 8,
-    sources: {
-      communes: {
-        type: "vector",
-        url: `pmtiles://${pmtilesUrl}`,
-      },
-    },
-    layers: [
-      { id: "background", type: "background", paint: { "background-color": "#1d242d" } },
-      {
-        id: "communes-fill",
-        type: "fill",
-        source: "communes",
-        "source-layer": "communes",
-        paint: {
-          "fill-color": "#146b8f",
-          "fill-opacity": 0.72,
-        },
-      },
-      {
-        id: "communes-line",
-        type: "line",
-        source: "communes",
-        "source-layer": "communes",
-        paint: {
-          "line-color": "#ff7a59",
-          "line-width": 0.0,
-          "line-opacity": 0.98,
-        },
-      },
-    ],
-  };
+function buildMapStyle() {
+  return "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 }
 
 async function init() {
@@ -693,18 +789,14 @@ async function init() {
   const pv = attrs.map((r) => r.pvout).filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
   if (pv.length) globalPvoutMedian = pv[Math.floor(pv.length / 2)];
 
+  buildInternalControls();
+  bindInternalPillarControls();
   updateLabels();
   refreshScenarioAndKPIs();
 
-  const protocol = new pmtiles.Protocol();
-  maplibregl.addProtocol("pmtiles", protocol.tile);
-  const pmtilesUrl = withVersion("./data/communes.pmtiles");
-  const pmtilesSource = new pmtiles.PMTiles(pmtilesUrl);
-  protocol.add(pmtilesSource);
-
   map = new maplibregl.Map({
     container: "map",
-    style: buildMapStyle(pmtilesUrl),
+    style: buildMapStyle(),
     center: [2.2, 46.7],
     zoom: 5.4,
     minZoom: 4,
@@ -719,12 +811,12 @@ async function init() {
     if (fallbackTriggered) return;
     fallbackTriggered = true;
     usingPmtiles = false;
-    console.warn("PMTiles fallback -> GeoJSON:", reason);
+    console.warn("GeoJSON fallback:", reason);
     loader.classList.remove("hidden");
-    loader.textContent = "PMTiles unavailable, loading GeoJSON fallback…";
+    loader.textContent = "Loading municipality overlay…";
     mapStatus.textContent = currentMapMode === "selection"
-      ? "Deployment-scenario view · GeoJSON fallback mode"
-      : "Merit-order view · GeoJSON fallback mode";
+      ? "Deployment-scenario view · GeoJSON overlay mode"
+      : "Merit-order view · GeoJSON overlay mode";
 
     try {
       const gj = await fetchJson("./data/communes_pillars.geojson");
@@ -757,12 +849,41 @@ async function init() {
 
   map.on("error", (ev) => {
     const msg = String(ev?.error?.message || "");
-    if (msg.toLowerCase().includes("pmtiles") || msg.toLowerCase().includes("source")) {
+    if (msg.toLowerCase().includes("pmtiles") || msg.toLowerCase().includes("source") || msg.toLowerCase().includes("vector")) {
       fallbackToGeoJSON(msg);
     }
   });
 
-  map.on("load", () => {
+  map.on("load", async () => {
+    try {
+      const gj = await fetchJson("./data/communes_pillars.geojson");
+      map.addSource("communes", { type: "geojson", data: gj });
+      map.addLayer({
+        id: "communes-fill",
+        type: "fill",
+        source: "communes",
+        paint: {
+          "fill-color": "#146b8f",
+          "fill-opacity": 0.72,
+        },
+      });
+      map.addLayer({
+        id: "communes-line",
+        type: "line",
+        source: "communes",
+        paint: {
+          "line-color": "#ff7a59",
+          "line-width": 0.0,
+          "line-opacity": 0.98,
+        },
+      });
+    } catch (err) {
+      console.error("GeoJSON commune layer failed:", err);
+      loader.textContent = "Municipality overlay could not be loaded.";
+      mapStatus.textContent = "Load error";
+      return;
+    }
+
     updateLabels();
     refreshScenarioAndKPIs();
     map.fitBounds(FR_BOUNDS, {
@@ -775,19 +896,8 @@ async function init() {
     map.resize();
     loader.classList.add("hidden");
     mapStatus.textContent = currentMapMode === "selection"
-      ? `Deployment-scenario view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`
-      : `Merit-order view · ${usingPmtiles ? "PMTiles / MapLibre rendering" : "GeoJSON fallback mode"}`;
-
-    if (usingPmtiles) {
-      setTimeout(() => {
-        try {
-          const hasSource = !!map.getSource("communes");
-          if (!hasSource) fallbackToGeoJSON("communes source unavailable");
-        } catch (e) {
-          fallbackToGeoJSON(e);
-        }
-      }, 2500);
-    }
+      ? `Deployment-scenario view · GeoJSON overlay mode`
+      : `Merit-order view · GeoJSON overlay mode`;
   });
 
   map.on("click", "communes-fill", (e) => {
@@ -848,21 +958,6 @@ weightKeys.forEach((k) => {
     refreshDebounced();
   });
 });
-internalPillarKeys.forEach((pillarKey) => {
-  const cfg = internalPillarConfigs[pillarKey];
-  cfg.keys.forEach((key) => {
-    cfg.sliders[key].addEventListener("input", async (ev) => {
-      rebalanceInternalWeights(pillarKey, key, ev.target.value);
-      updateLabels();
-      await ensureSubpillarAttrsLoaded();
-      refreshDebounced();
-    });
-  });
-  cfg.toggleEl.addEventListener("click", async () => {
-    const isOpen = cfg.toggleEl.getAttribute("aria-expanded") === "true";
-    setSubpillarOpen(pillarKey, !isOpen);
-  });
-});
 for (const el of [applyPhi, targetHa, mobilizationPct, density, topPct]) {
   el.addEventListener("input", () => {
     updateLabels();
@@ -877,7 +972,6 @@ mapModeButtons.forEach((button) => {
 });
 contextClose.addEventListener("click", () => setContextPanel(null));
 
-internalPillarKeys.forEach((pillarKey) => setSubpillarOpen(pillarKey, false));
 setMapMode(currentMapMode);
 window.addEventListener("error", (event) => {
   const message = event?.error?.stack || event?.message || "Unknown browser error";
