@@ -282,53 +282,55 @@ function rebalanceSliderGroup(keys, sliderGroup, raw, step, changedKey, changedV
   });
 }
 
+function ensureSinglePillarControls() {
+ internalPillarKeys.forEach((pillarKey) => {
+   const panel = document.querySelectorAll(`.control--with-subpanel[data-pillar-panel="${pillarKey}"]`);
+   if (panel.length > 1) {
+     for (let i = 1; i < panel.length; i += 1) {
+       panel[i].remove();
+     }
+   }
+   const duplicateBodies = document.querySelectorAll(`[data-body="${pillarKey}"]`);
+   if (duplicateBodies.length > 1) {
+     for (let i = 1; i < duplicateBodies.length; i += 1) {
+       duplicateBodies[i].remove();
+     }
+   }
+ });
+}
+
 function buildInternalControls() {
- const container = document.getElementById("internalControls");
- if (!container) return;
-
- const html = internalPillarKeys
-   .map((pillarKey) => {
-     const cfg = internalPillarConfigs[pillarKey];
-     const controls = cfg.keys
-       .map(
-         (key) => `
-           <div class="control">
-             <div class="control-head">
-               <span>${cfg.labels[key]}</span>
-               <span><span id="${pillarKey}_${key}_val">33.3</span>%</span>
-             </div>
-             <input id="${pillarKey}_${key}" type="range" min="0" max="100" step="0.1" value="33.3" />
-           </div>
-         `,
-       )
-       .join("");
-
-     return `
-       <div class="control control--with-subpanel">
-         <button type="button" class="control-disclosure" aria-expanded="false" data-pillar="${pillarKey}">
-           <span>${cfg.label}</span>
-           <span class="control-disclosure__chevron">▾</span>
-         </button>
-         <div class="subpillar-body hidden" data-body="${pillarKey}">
-           <div class="subpillar-meta">
-             <span>Internal mix</span>
-             <strong id="${pillarKey}_total">100.0%</strong>
-           </div>
-           <p class="subpillar-text">Weights are normalized to 100% within this pillar.</p>
-           ${controls}
-           <div class="meta-line"><strong>Normalized mix</strong><span id="${pillarKey}_norm"></span></div>
-         </div>
-       </div>
-     `;
-   })
-   .join("");
-
- container.innerHTML = html;
-
+ ensureSinglePillarControls();
  internalPillarKeys.forEach((pillarKey) => {
    const cfg = internalPillarConfigs[pillarKey];
-   cfg.toggleEl = document.querySelector(`[data-pillar="${pillarKey}"]`);
-   cfg.bodyEl = document.querySelector(`[data-body="${pillarKey}"]`);
+   const toggleEl = document.querySelector(`[data-pillar="${pillarKey}"]`);
+   const bodyEl = document.querySelector(`[data-body="${pillarKey}"]`);
+   if (!toggleEl || !bodyEl) return;
+
+   cfg.toggleEl = toggleEl;
+   cfg.bodyEl = bodyEl;
+   cfg.bodyEl.innerHTML = `
+     <div class="subpillar-meta">
+       <span>Component mix</span>
+       <strong id="${pillarKey}_total">100.0%</strong>
+     </div>
+     <p class="subpillar-text">Weights are normalized to 100% within this pillar.</p>
+     ${cfg.keys
+       .map(
+         (key) => `
+         <div class="control">
+           <div class="control-head">
+             <span>${cfg.labels[key]}</span>
+             <span><span id="${pillarKey}_${key}_val">33.3</span>%</span>
+           </div>
+           <input id="${pillarKey}_${key}" type="range" min="0" max="100" step="0.1" value="33.3" />
+         </div>
+       `,
+       )
+       .join("")}
+     <div class="meta-line"><strong>Normalized mix</strong><span id="${pillarKey}_norm"></span></div>
+   `;
+
    cfg.sliders = {};
    cfg.sliderVals = {};
    cfg.keys.forEach((key) => {
@@ -749,7 +751,7 @@ async function ensureSubpillarAttrsLoaded() {
 }
 
 function buildMapStyle() {
-  return "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+  return "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 }
 
 async function init() {

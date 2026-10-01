@@ -59,35 +59,54 @@
               </div>
               <input id="wE" type="range" min="0" max="100" step="0.1" value="20" />
             </div>
-            <div class="control">
+            <div class="control control--with-subpanel" data-pillar-panel="A">
               <div class="control-head">
                 <span>Agricultural intensity</span>
                 <span><span id="wA_val">20.0</span>%</span>
               </div>
               <input id="wA" type="range" min="0" max="100" step="0.1" value="20" />
+              <button type="button" class="control-disclosure" data-pillar="A" aria-expanded="false">
+                <span>Component mix</span>
+                <span class="control-disclosure__chevron">▾</span>
+              </button>
+              <div class="subpillar-body hidden" data-body="A"></div>
             </div>
-            <div class="control">
+            <div class="control control--with-subpanel" data-pillar-panel="C">
               <div class="control-head">
                 <span>Climate resilience</span>
                 <span><span id="wC_val">20.0</span>%</span>
               </div>
               <input id="wC" type="range" min="0" max="100" step="0.1" value="20" />
+              <button type="button" class="control-disclosure" data-pillar="C" aria-expanded="false">
+                <span>Component mix</span>
+                <span class="control-disclosure__chevron">▾</span>
+              </button>
+              <div class="subpillar-body hidden" data-body="C"></div>
             </div>
-            <div class="control">
+            <div class="control control--with-subpanel" data-pillar-panel="R">
               <div class="control-head">
                 <span>Rural resilience</span>
                 <span><span id="wR_val">20.0</span>%</span>
               </div>
               <input id="wR" type="range" min="0" max="100" step="0.1" value="20" />
+              <button type="button" class="control-disclosure" data-pillar="R" aria-expanded="false">
+                <span>Component mix</span>
+                <span class="control-disclosure__chevron">▾</span>
+              </button>
+              <div class="subpillar-body hidden" data-body="R"></div>
             </div>
-            <div class="control">
+            <div class="control control--with-subpanel" data-pillar-panel="N">
               <div class="control-head">
                 <span>Nature conservation</span>
                 <span><span id="wN_val">20.0</span>%</span>
               </div>
               <input id="wN" type="range" min="0" max="100" step="0.1" value="20" />
+              <button type="button" class="control-disclosure" data-pillar="N" aria-expanded="false">
+                <span>Component mix</span>
+                <span class="control-disclosure__chevron">▾</span>
+              </button>
+              <div class="subpillar-body hidden" data-body="N"></div>
             </div>
-            <div id="internalControls"></div>
             <label class="toggle-row"><input type="checkbox" id="applyPhi" checked /> Apply <code>phi</code> feasibility multiplier</label>
             <div class="control"><label for="topPct">Visual top threshold: <span id="topPct_val">10</span>%</label><input id="topPct" type="range" min="1" max="50" step="1" value="10" /></div>
             <div class="meta-line"><strong>Normalized weights</strong><span id="weightsNorm"></span></div>
